@@ -95,6 +95,15 @@ class AnnouncePage(Resource):
         return bencodepy.bencode(output)
 
 
+class TorrentPage(Resource):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.datastore = DataStructure()
+
+    def render_GET(self, request: Request):
+        pass
+
+
 class HTTPServer(Resource):
     def __init__(self, opts=None):
         super().__init__()
