@@ -7,8 +7,8 @@ from twisted.logger import textFileLogObserver, globalLogPublisher
 
 
 def make_app(udp_port=9999, http_port=8080, websocket_port=9000):
-    # console_observer = textFileLogObserver(sys.stdout)
-    # globalLogPublisher.addObserver(console_observer)
+    console_observer = textFileLogObserver(sys.stdout)
+    globalLogPublisher.addObserver(console_observer)
 
     # UDP Server
     reactor.listenUDP(udp_port, UDPServer())

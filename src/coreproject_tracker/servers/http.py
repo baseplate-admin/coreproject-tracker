@@ -83,7 +83,7 @@ class AnnouncePage(Resource):
             else:
                 leechers += 1
 
-            peers.append((peer.peer_ip, peer.port))
+            peers.append({"ip": peer.peer_ip, "port": peer.port})
             peer_count += 1
 
         output = {
@@ -92,6 +92,7 @@ class AnnouncePage(Resource):
             "complete": seeders,
             "incomplete": leechers,
         }
+        print(output)
         return bencodepy.bencode(output)
 
 
