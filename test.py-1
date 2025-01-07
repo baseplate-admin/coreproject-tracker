@@ -1,0 +1,54 @@
+import struct
+
+
+def analyze_udp_packet(msg):
+    # Step 1: Parse the Protocol Identifier (4 bytes)
+    protocol_identifier = struct.unpack(">I", msg[:4])[0]
+
+    # Step 2: Parse the Action (4 bytes)
+    action = struct.unpack(">I", msg[4:8])[0]
+
+    # Step 3: Parse the Transaction ID (4 bytes)
+    transaction_id = struct.unpack(">I", msg[8:12])[0]
+
+    # Step 4: Extract the Payload (remaining bytes)
+    payload = msg[12:]
+
+    # Print out the parsed information
+    print(f"Protocol Identifier: {hex(protocol_identifier)}")
+    print(f"Action: {action}")
+    print(f"Transaction ID: {transaction_id}")
+
+    # Analyzing action type
+    if action == 0:
+        action_type = "Connect"
+    elif action == 1:
+        action_type = "Announce"
+    elif action == 2:
+        action_type = "Scrape"
+    elif action == 3:
+        action_type = "Error"
+    else:
+        action_type = "Unknown"
+
+    print(f"Action Type: {action_type}")
+
+    # Step 5: Print Payload if needed
+    print(f"Payload (raw bytes): {payload.hex()}")
+
+    # If action is "connect", we would expect a 16-byte response (connection id, etc.)
+    if action == 0:
+        if len(payload) >= 16:
+            connection_id = struct.unpack(">Q", payload[:8])[0]
+            print(f"Connection ID: {hex(connection_id)}")
+        else:
+            print("Invalid payload for connect action.")
+
+    # Further action-specific parsing can be added here (e.g., for announce or scrape actions).
+
+
+if __name__ == "__main__":
+    # The packet you provided in hexadecimal byte format
+    msg = b"\x00\x00\x04\x17'\x10\x19\x80\x00\x00\x00\x00\xf4\xa7\xef\x1f"
+
+    analyze_udp_packet(msg)
