@@ -1,51 +1,41 @@
+import ipaddress
 import struct
 
 
-def parse_udp_packet(msg):
-    # Step 1: Extract the Protocol Identifier (4 bytes)
-    protocol_identifier = struct.unpack(">I", msg[:4])[0]
-
-    # Step 2: Extract the Action (4 bytes)
-    action = struct.unpack(">I", msg[4:8])[0]
-
-    # Step 3: Extract the Transaction ID (4 bytes)
-    transaction_id = struct.unpack(">I", msg[8:12])[0]
-
-    # Step 4: Extract the Payload (remaining bytes)
-    payload = msg[12:]
-
-    # Create a dictionary to hold the parsed data
-    params = {
-        "protocolIdentifier": hex(protocol_identifier),
-        "action": action,
-        "transactionId": transaction_id,
-        "type": "udp",
-        "payload": payload.hex(),
-    }
-
-    # Handle specific actions
-    if action == 0:  # Connect action
-        if len(payload) >= 16:
-            connection_id = struct.unpack(">Q", payload[:8])[0]
-            params["connectionId"] = hex(connection_id)
-        else:
-            params["error"] = "Invalid payload for connect action"
-
-    elif action == 1:  # Announce action (this would have more details)
-        params["error"] = "Announce action processing not implemented"
-
-    elif action == 2:  # Scrape action (this would also need more processing)
-        params["error"] = "Scrape action processing not implemented"
-
-    elif action == 3:  # Error action
-        params["error"] = "Error action processing not implemented"
-
-    return params
+def addr_to_ip_port(addr):
+    """Convert address in the format [IP]:[PORT] to a tuple (IP, PORT)."""
+    if not isinstance(addr, str):
+        raise ValueError("Address must be a string in the format [IP]:[PORT]")
+    parts = addr.rsplit(":", 1)
+    if len(parts) != 2:
+        raise ValueError("Invalid address format, expecting: [IP]:[PORT]")
+    ip = parts[0]
+    port = int(parts[1])
+    return ip, port
 
 
-# Example usage:
-msg = b"\x00\x00\x04\x17'\x10\x19\x80\x00\x00\x00\x00\xf4\xa7\xef\x1f"  # Your packet
-parsed_data = parse_udp_packet(msg)
+def addrs_to_compact(addrs):
+    """Convert a list of addresses to compact format."""
+    if isinstance(addrs, str):
+        addrs = [addrs]
 
-# Print the parsed result
-print(parsed_data)
+    compact = bytearray()
+    for addr in addrs:
+        ip, port = addr_to_ip_port(addr)
+        ip_obj = ipaddress.ip_address(ip)  # Parse the IP address
+        ip_bytes = ip_obj.packed  # Convert to byte representation
+        port_bytes = struct.pack("!H", port)  # Convert port to 2-byte big-endian
+        compact.extend(ip_bytes + port_bytes)
+
+    return bytes(compact)
+
+
+# Support for multi and multi6 usage
+multi = addrs_to_compact
+multi6 = addrs_to_compact
+
+# Example usage
+if __name__ == "__main__":
+    addrs = ["10.10.10.5:128", "100.56.58.99:28525"]
+    compact = addrs_to_compact(addrs)
+    print(compact)

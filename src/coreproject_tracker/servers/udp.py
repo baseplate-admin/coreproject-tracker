@@ -3,6 +3,7 @@ from twisted.logger import Logger
 import struct
 from coreproject_tracker.common import CONNECTION_ID
 import enum
+from coreproject_tracker.datastructures import DataStructure
 
 log = Logger(namespace="coreproject_tracker")
 
@@ -53,120 +54,123 @@ def from_uint16(data):
     return struct.unpack(">H", data)[0]
 
 
-def make_udp_packet(params: dict[str, int | bytes | dict]) -> bytes:
-    """
-    Create UDP packets for BitTorrent tracker protocol.
+class UDPServer(DatagramProtocol):
+    def __init__(self, *args, **kwargs):
+        self.data = self.datastore = DataStructure()
 
-    Args:
-        params: Dictionary containing packet parameters including 'action' and other
-               action-specific parameters.
+    def make_udp_packet(self, params: dict[str, int | bytes | dict]) -> bytes:
+        """
+        Create UDP packets for BitTorrent tracker protocol.
 
-    Returns:
-        bytes: The constructed UDP packet
+        Args:
+            params: Dictionary containing packet parameters including 'action' and other
+                action-specific parameters.
 
-    Raises:
-        ValueError: If the action is not implemented
-    """
-    action = params["action"]
+        Returns:
+            bytes: The constructed UDP packet
 
-    if action == Actions.CONNECT:
-        packet = b"".join(
-            [
-                to_uint32(Actions.CONNECT),
-                to_uint32(params["transaction_id"]),
-                params["connection_id"],
-            ]
-        )
+        Raises:
+            ValueError: If the action is not implemented
+        """
+        action = params["action"]
 
-    elif action == Actions.ANNOUNCE:
-        packet = b"".join(
-            [
-                to_uint32(Actions.ANNOUNCE),
-                to_uint32(params["transaction_id"]),
-                to_uint32(params["interval"]),
-                to_uint32(params["incomplete"]),
-                to_uint32(params["complete"]),
-                params["peers"],
-            ]
-        )
-
-    elif action == Actions.SCRAPE:
-        scrape_response = [
-            to_uint32(Actions.SCRAPE),
-            to_uint32(params["transaction_id"]),
-        ]
-
-        for info_hash, file in params["files"].items():
-            scrape_response.extend(
+        if action == Actions.CONNECT:
+            packet = b"".join(
                 [
-                    to_uint32(file["complete"]),
-                    to_uint32(
-                        file["downloaded"]
-                    ),  # Note: this only provides a lower-bound
-                    to_uint32(file["incomplete"]),
+                    to_uint32(Actions.CONNECT),
+                    to_uint32(params["transaction_id"]),
+                    params["connection_id"],
                 ]
             )
 
-        packet = b"".join(scrape_response)
+        elif action == Actions.ANNOUNCE:
+            packet = b"".join(
+                [
+                    to_uint32(Actions.ANNOUNCE),
+                    to_uint32(params["transaction_id"]),
+                    to_uint32(params["interval"]),
+                    to_uint32(params["incomplete"]),
+                    to_uint32(params["complete"]),
+                    params["peers"],
+                ]
+            )
 
-    elif action == Actions.ERROR:
-        packet = b"".join(
-            [
-                to_uint32(Actions.ERROR),
-                to_uint32(params.get("transaction_id", 0)),
-                str(params.get("failure_reason", "")).encode(),
+        elif action == Actions.SCRAPE:
+            scrape_response = [
+                to_uint32(Actions.SCRAPE),
+                to_uint32(params["transaction_id"]),
             ]
-        )
 
-    else:
-        raise ValueError(f"Action not implemented: {action}")
+            for info_hash, file in params["files"].items():
+                scrape_response.extend(
+                    [
+                        to_uint32(file["complete"]),
+                        to_uint32(
+                            file["downloaded"]
+                        ),  # Note: this only provides a lower-bound
+                        to_uint32(file["incomplete"]),
+                    ]
+                )
 
-    return packet
+            packet = b"".join(scrape_response)
 
+        elif action == Actions.ERROR:
+            packet = b"".join(
+                [
+                    to_uint32(Actions.ERROR),
+                    to_uint32(params.get("transaction_id", 0)),
+                    str(params.get("failure_reason", "")).encode(),
+                ]
+            )
 
-def parse_udp_packet(msg, addr):
-    connection_id = msg[:8]
-    connection_id_unpacked = struct.unpack(">Q", msg[:8])[0]
-    if connection_id_unpacked != CONNECTION_ID:
-        raise ValueError("Error")
+        else:
+            raise ValueError(f"Action not implemented: {action}")
 
-    action = from_uint32(msg[8:12])
-    transaction_id = from_uint32(msg[12:16])
+        return packet
 
-    # Construct the result (similar to the JavaScript object)
-    params = {
-        "connection_id": connection_id,
-        "action": action,
-        "transaction_id": transaction_id,
-        "type": "udp",
-    }
+    def parse_udp_packet(self, msg, addr):
+        connection_id = msg[:8]
+        connection_id_unpacked = struct.unpack(">Q", msg[:8])[0]
+        if connection_id_unpacked != CONNECTION_ID:
+            raise ValueError("Error")
 
-    if params["action"] == Actions.ANNOUNCE:
-        params["info_hash"] = msg[16:36].hex()  # 20 bytes
-        params["peer_id"] = msg[36:56].hex()  # 20 bytes
-        params["downloaded"] = from_uint64(
-            msg[56:64]
-        )  # Convert 64-bit unsigned integer
-        params["left"] = from_uint64(msg[64:72])  # Convert 64-bit unsigned integer
-        params["uploaded"] = from_uint64(msg[72:80])  # Convert 64-bit unsigned integer
+        action = from_uint32(msg[8:12])
+        transaction_id = from_uint32(msg[12:16])
 
-        # Read 4-byte unsigned int (big-endian)
-        event_id = struct.unpack(">I", msg[80:84])[0]
-        params["event"] = EVENTS.get(event_id)
-        if not params["event"]:
-            raise ValueError("Invalid event")
+        # Construct the result (similar to the JavaScript object)
+        params = {
+            "connection_id": connection_id,
+            "action": action,
+            "transaction_id": transaction_id,
+            "type": "udp",
+        }
 
-        params["ip"] = from_uint32(msg[84:88]) or addr[0]
-        params["key"] = from_uint32(msg[88:92])
+        if params["action"] == Actions.ANNOUNCE:
+            params["info_hash"] = msg[16:36].hex()  # 20 bytes
+            params["peer_id"] = msg[36:56].hex()  # 20 bytes
+            params["downloaded"] = from_uint64(
+                msg[56:64]
+            )  # Convert 64-bit unsigned integer
+            params["left"] = from_uint64(msg[64:72])  # Convert 64-bit unsigned integer
+            params["uploaded"] = from_uint64(
+                msg[72:80]
+            )  # Convert 64-bit unsigned integer
 
-        params["numwant"] = from_uint32(msg[92:96]) or 50  # Default announce peer
-        params["port"] = from_uint16(msg[96:98]) or addr[1]
-        params["addr"] = f"{params['ip']}:{params['port']}"
-        params["compact"] = 1
-    return params
+            # Read 4-byte unsigned int (big-endian)
+            event_id = struct.unpack(">I", msg[80:84])[0]
+            params["event"] = EVENTS.get(event_id)
+            if not params["event"]:
+                raise ValueError("Invalid event")
 
+            params["ip"] = from_uint32(msg[84:88]) or addr[0]
+            params["key"] = from_uint32(msg[88:92])
 
-class UDPServer(DatagramProtocol):
+            params["numwant"] = from_uint32(msg[92:96]) or 50  # Default announce peer
+            params["port"] = from_uint16(msg[96:98]) or addr[1]
+            params["addr"] = f"{params['ip']}:{params['port']}"
+            params["compact"] = 1
+        return params
+
     def datagramReceived(self, data, addr):
         """
         Called when a datagram (UDP packet) is received.
@@ -179,6 +183,8 @@ class UDPServer(DatagramProtocol):
                 f"received packet length is {packet_length} is shorter than 16 bytes"
             )
 
-        param = parse_udp_packet(data, addr)
-        res = make_udp_packet(param)
+        param = self.parse_udp_packet(data, addr)
+        
+
+        res = self.make_udp_packet(param)
         self.transport.write(res, addr)
