@@ -1,6 +1,5 @@
 import json
 from common import ACTIONS, MAX_ANNOUNCE_PEERS, REMOVE_IPV4_MAPPED_IPV6_RE, IPV6_RE
-from uint8_util import bin2hex
 
 
 def handle_ws_request(socket, opts, params):
@@ -15,12 +14,12 @@ def handle_ws_request(socket, opts, params):
         params["action"] = ACTIONS["ANNOUNCE"]
 
         if isinstance(params["info_hash"], str) and len(params["info_hash"]) == 20:
-            params["info_hash"] = bin2hex(params["info_hash"])
+            params["info_hash"] = params["info_hash"].hex()
         else:
             raise ValueError("invalid info_hash")
 
         if isinstance(params["peer_id"], str) and len(params["peer_id"]) == 20:
-            params["peer_id"] = bin2hex(params["peer_id"])
+            params["peer_id"] = params["peer_id"].hex()
         else:
             raise ValueError("invalid peer_id")
 
@@ -29,7 +28,7 @@ def handle_ws_request(socket, opts, params):
                 isinstance(params["to_peer_id"], str)
                 and len(params["to_peer_id"]) == 20
             ):
-                params["to_peer_id"] = bin2hex(params["to_peer_id"])
+                params["to_peer_id"] = params["to_peer_id"].hex()
             else:
                 raise ValueError("invalid `to_peer_id` (required with `answer`)")
 
@@ -52,7 +51,7 @@ def handle_ws_request(socket, opts, params):
 
         if isinstance(params["info_hash"], list):
             params["info_hash"] = [
-                bin2hex(binary_info_hash)
+                binary_info_hash.hex()
                 if isinstance(binary_info_hash, str) and len(binary_info_hash) == 20
                 else ValueError("invalid info_hash")
                 for binary_info_hash in params["info_hash"]
