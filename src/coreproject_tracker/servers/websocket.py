@@ -1,11 +1,6 @@
 import json
 from twisted.protocols.basic import LineReceiver
 from twisted.internet import protocol
-from coreproject_tracker.common import (
-    ACTIONS,
-    MAX_ANNOUNCE_PEERS,
-    IPV6_RE,
-)
 
 
 class WebSocketServer(LineReceiver):

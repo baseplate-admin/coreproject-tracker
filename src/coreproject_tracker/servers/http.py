@@ -1,13 +1,4 @@
-import re
 from twisted.web.resource import Resource
-from coreproject_tracker.common import (
-    querystring_parse,
-    ACTIONS,
-    REMOVE_IPV4_MAPPED_IPV6_RE,
-    IPV6_RE,
-    DEFAULT_ANNOUNCE_PEERS,
-    MAX_ANNOUNCE_PEERS,
-)
 import json
 
 
