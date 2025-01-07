@@ -2,20 +2,55 @@ from twisted.internet.protocol import DatagramProtocol
 from twisted.logger import Logger
 import struct
 from coreproject_tracker.common import CONNECTION_ID
+import enum
 
 log = Logger(namespace="coreproject_tracker")
 
 
-class Actions:
+class Actions(enum.IntEnum):
     CONNECT = 0
     ANNOUNCE = 1
     SCRAPE = 2
     ERROR = 3
 
 
+EVENTS = {
+    0: "update",
+    1: "completed",
+    2: "started",
+    3: "stopped",
+    4: "paused",
+}
+
+
 def to_uint32(value: int) -> bytes:
     """Convert an integer to a 4-byte unsigned integer in network byte order."""
     return struct.pack(">I", value)
+
+
+def from_uint64(buf):
+    """
+    Convert an 8-byte buffer into an unsigned 64-bit integer.
+    """
+    # Ensure the buffer is 8 bytes long
+    if len(buf) != 8:
+        raise ValueError("Buffer must be exactly 8 bytes")
+
+    # Unpack the high and low 32-bit parts (big-endian)
+    high, low = struct.unpack(">II", buf)
+
+    # Calculate the 64-bit integer
+    TWO_PWR_32 = 2**32
+    low_unsigned = low if low >= 0 else TWO_PWR_32 + low
+    return high * TWO_PWR_32 + low_unsigned
+
+
+def from_uint32(data):
+    return struct.unpack(">I", data)[0]
+
+
+def from_uint16(data):
+    return struct.unpack(">H", data)[0]
 
 
 def make_udp_packet(params: dict[str, int | bytes | dict]) -> bytes:
@@ -32,7 +67,6 @@ def make_udp_packet(params: dict[str, int | bytes | dict]) -> bytes:
     Raises:
         ValueError: If the action is not implemented
     """
-    print(params)
     action = params["action"]
 
     if action == Actions.CONNECT:
@@ -90,14 +124,14 @@ def make_udp_packet(params: dict[str, int | bytes | dict]) -> bytes:
     return packet
 
 
-def parse_udp_packet(msg):
+def parse_udp_packet(msg, addr):
     connection_id = msg[:8]
     connection_id_unpacked = struct.unpack(">Q", msg[:8])[0]
     if connection_id_unpacked != CONNECTION_ID:
         raise ValueError("Error")
 
-    action = struct.unpack(">I", msg[8:12])[0]
-    transaction_id = struct.unpack(">I", msg[12:16])[0]
+    action = from_uint32(msg[8:12])
+    transaction_id = from_uint32(msg[12:16])
 
     # Construct the result (similar to the JavaScript object)
     params = {
@@ -107,6 +141,28 @@ def parse_udp_packet(msg):
         "type": "udp",
     }
 
+    if params["action"] == Actions.ANNOUNCE:
+        params["info_hash"] = msg[16:36].hex()  # 20 bytes
+        params["peer_id"] = msg[36:56].hex()  # 20 bytes
+        params["downloaded"] = from_uint64(
+            msg[56:64]
+        )  # Convert 64-bit unsigned integer
+        params["left"] = from_uint64(msg[64:72])  # Convert 64-bit unsigned integer
+        params["uploaded"] = from_uint64(msg[72:80])  # Convert 64-bit unsigned integer
+
+        # Read 4-byte unsigned int (big-endian)
+        event_id = struct.unpack(">I", msg[80:84])[0]
+        params["event"] = EVENTS.get(event_id)
+        if not params["event"]:
+            raise ValueError("Invalid event")
+
+        params["ip"] = from_uint32(msg[84:88]) or addr[0]
+        params["key"] = from_uint32(msg[88:92])
+
+        params["numwant"] = from_uint32(msg[92:96]) or 50  # Default announce peer
+        params["port"] = from_uint16(msg[96:98]) or addr[1]
+        params["addr"] = f"{params['ip']}:{params['port']}"
+        params["compact"] = 1
     return params
 
 
@@ -123,6 +179,6 @@ class UDPServer(DatagramProtocol):
                 f"received packet length is {packet_length} is shorter than 16 bytes"
             )
 
-        param = parse_udp_packet(data)
+        param = parse_udp_packet(data, addr)
         res = make_udp_packet(param)
         self.transport.write(res, addr)
