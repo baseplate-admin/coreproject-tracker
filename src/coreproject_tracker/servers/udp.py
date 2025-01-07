@@ -7,9 +7,9 @@ log = Logger(namespace="coreproject_tracker")
 
 
 def parse_udp_packet(msg):
-    connection_id = msg[:8]
-    print(connection_id.hex())
-    print(CONNECTION_ID)
+    connection_id = struct.unpack(">Q", msg[:8])[0]
+    if connection_id != CONNECTION_ID:
+        raise ValueError("Error")
 
     action = struct.unpack(">I", msg[8:12])[0]
     transaction_id = struct.unpack(">I", msg[12:16])[0]
