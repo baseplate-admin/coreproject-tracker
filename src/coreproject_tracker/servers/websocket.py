@@ -1,55 +1,104 @@
-import json
-from twisted.protocols.basic import LineReceiver
+import urllib.parse
+from twisted.logger import Logger
+from coreproject_tracker.functions.ip import is_valid_ip
+from coreproject_tracker.datastructures import DataStructure
+import bencodepy
+from twisted.protocols.websocket import WebSocketProtocol
 from twisted.internet import protocol
 
+log = Logger(namespace="coreproject_tracker")
 
-class WebSocketServer(LineReceiver):
-    def __init__(self, opts=None):
-        self.opts = opts or {}
-        self.socket = None
-        self.ip = None
-        self.port = None
-        self.addr = None
-        self.headers = None
 
-    def connectionMade(self):
-        # This is called when the connection is established
-        self.socket = self.transport
-        self.ip = self.transport.getPeer().host
-        self.port = self.transport.getPeer().port
+class WebSocketServer(WebSocketProtocol):
+    def __init__(self):
+        self.datastore = DataStructure()
 
-    def connectionLost(self, reason):
-        # Clean up when the connection is lost
-        self.socket = None
-        self.ip = None
-        self.port = None
-        self.addr = None
-        self.headers = None
-
-    def lineReceived(self, line):
-        # This method is called when data is received
+    def validate_data(self, data: bytes) -> dict[str, str | int] | bytes:
         try:
-            params = json.loads(line)  # may raise ValueError if the JSON is malformed
-            params["type"] = "ws"
-            params["socket"] = self.socket
+            # Parse the WebSocket message in a similar way to HTTP/UDP
+            params = urllib.parse.parse_qs(data.decode())
+            info_hash_raw = params.get("info_hash", [b""])[0]
+            info_hash = urllib.parse.unquote_to_bytes(info_hash_raw).hex()
 
-            # Handle WebSocket request
-            params = self.handle_ws_request(params)
-            self.sendResponse(params)
+            if (info_hash_length := len(info_hash_raw)) > 20:
+                return f"`info_hash` length is {info_hash_length} which is greater than 20".encode()
 
-        except ValueError as e:
-            self.sendError(str(e))
+            port = params.get("port", [""])[0]
+            if not port.isdigit():
+                return "`port` is not an integer".encode()
 
-    def handle_ws_request(self, params):
-        pass
+            port = int(port)
+            if port <= 0 or port >= 65535:
+                return f"`port` is {port} which is not in range(0, 65535)".encode()
 
-    def sendResponse(self, params):
-        # Send a response back to the client (e.g., via WebSocket)
-        pass
+            left = params.get("left", [""])[0]
+            if not left.isdigit():
+                return "`left` is not an integer".encode()
+            left = int(left)
 
-    def sendError(self, error_message):
-        # Send an error message back to the client
-        pass
+            numwant = params.get("numwant", [""])[0]
+            if not numwant.isdigit():
+                return b"`numwant` is not an integer"
+            numwant = int(numwant)
+
+            # Peer IP from WebSocket context is often the same as in HTTP or UDP
+            peer_ip = self.transport.client[0]
+            if not is_valid_ip(peer_ip):
+                return "`peer_ip` is not a valid ip".encode()
+
+            return {
+                "info_hash": info_hash,
+                "port": port,
+                "left": left,
+                "numwant": numwant,
+                "peer_ip": peer_ip,
+            }
+
+        except Exception as e:
+            return f"Error processing request: {str(e)}".encode()
+
+    def onMessage(self, message, binary):
+        # Validate and process the WebSocket message
+        data = self.validate_data(message)
+        if isinstance(data, bytes):
+            # If there is an error, send back the error message
+            self.sendMessage(data, binary=True)
+            return
+
+        # Add the peer to the datastore
+        self.datastore.add_peer(
+            data["info_hash"], data["peer_ip"], data["port"], data["left"], 3600
+        )
+
+        # Prepare the peers response
+        peer_count = 0
+        peers = []
+        seeders = 0
+        leechers = 0
+
+        for peer in self.datastore.get_peers(data["info_hash"]):
+            if peer_count > data["numwant"]:
+                break
+
+            if peer.left == 0:
+                seeders += 1
+            else:
+                leechers += 1
+
+            peers.append({"ip": peer.peer_ip, "port": peer.port})
+            peer_count += 1
+
+        # Prepare the bencoded response
+        output = {
+            "peers": peers,
+            "min interval": 60,
+            "complete": seeders,
+            "incomplete": leechers,
+        }
+        response = bencodepy.bencode(output)
+
+        # Send the response back to the client
+        self.sendMessage(response, binary=True)
 
 
 class WebSocketFactory(protocol.ServerFactory):
