@@ -63,6 +63,17 @@ files = [
 visualize = ["Twisted (>=16.1.1)", "graphviz (>0.5.1)"]
 
 [[package]]
+name = "bencode-py"
+version = "4.0.0"
+description = "Simple bencode parser (for Python 2, Python 3 and PyPy)"
+optional = false
+python-versions = "*"
+files = [
+    {file = "bencode.py-4.0.0-py2.py3-none-any.whl", hash = "sha256:99c06a55764e85ffe81622fdf9ee78bd737bad3ea61d119784a54bb28860d962"},
+    {file = "bencode.py-4.0.0.tar.gz", hash = "sha256:2a24ccda1725a51a650893d0b63260138359eaa299bb6e7a09961350a2a6e05c"},
+]
+
+[[package]]
 name = "cffi"
 version = "1.17.1"
 description = "Foreign Function Interface for Python calling C code."
@@ -487,4 +498,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.13"
-content-hash = "4d13fab8d90494b34b7f7ca156faec44eb75220883c32c86885e0eb85936181e"
+content-hash = "e124f03189ec4f70362db9c69eb9bf3b07afde033259857b4b8cf7f88834e735"

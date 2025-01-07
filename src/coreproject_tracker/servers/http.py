@@ -4,6 +4,7 @@ from twisted.web.resource import Resource
 from twisted.logger import Logger
 from twisted.web.server import Request
 from coreproject_tracker.functions.ip import is_valid_ip
+from coreproject_tracker.store.torrent import TorrentStore
 
 log = Logger(namespace="coreproject_tracker")
 
@@ -11,7 +12,11 @@ log = Logger(namespace="coreproject_tracker")
 class AnnouncePage(Resource):
     isLeaf = True
 
-    def render_GET(self, request: Request) -> bytes:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.torrent_store = TorrentStore()
+
+    def validate_data(self, request: Request) -> dict[str, str | int] | bytes:
         info_hash_raw = request.args.get(b"info_hash")[0]
         info_hash = urllib.parse.unquote_to_bytes(info_hash_raw).hex()
         if (info_hash_length := len(info_hash_raw)) > 20:
@@ -44,6 +49,22 @@ class AnnouncePage(Resource):
         if not is_valid_ip(peer_ip):
             request.setResponseCode(HTTPStatus.BAD_REQUEST)
             return "`peer_ip` is not a valid ip".encode()
+
+        return {
+            "info_hash": info_hash,
+            "port": port,
+            "left": left,
+            "numwant": numwant,
+            "peer_ip": peer_ip,
+        }
+
+    def render_GET(self, request: Request) -> bytes:
+        data = self.validate_data(request)
+        # If there is error in data, it should be in bytes
+        if isinstance(data, bytes):
+            return data
+
+        self.torrent_store.add(data["info_hash"])
 
 
 class HTTPServer(Resource):

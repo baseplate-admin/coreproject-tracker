@@ -1,4 +1,4 @@
-class PeerStore:
+class TorrentStore:
     _instance = None
 
     def __init__(self):
