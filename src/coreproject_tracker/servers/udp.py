@@ -1,5 +1,28 @@
 from twisted.internet.protocol import DatagramProtocol
-from twisted.protocols import basic
+from twisted.logger import Logger
+import struct
+from coreproject_tracker.common import CONNECTION_ID
+
+log = Logger(namespace="coreproject_tracker")
+
+
+def parse_udp_packet(msg):
+    connection_id = msg[:8]
+    print(connection_id.hex())
+    print(CONNECTION_ID)
+
+    action = struct.unpack(">I", msg[8:12])[0]
+    transaction_id = struct.unpack(">I", msg[12:16])[0]
+
+    # Construct the result (similar to the JavaScript object)
+    params = {
+        "connection_id": connection_id,
+        "action": action,
+        "transactionId": transaction_id,
+        "type": "udp",
+    }
+
+    return params
 
 
 class UDPServer(DatagramProtocol):
@@ -10,9 +33,13 @@ class UDPServer(DatagramProtocol):
         - `data`: The received message.
         - `addr`: The address of the sender (tuple of IP and port).
         """
-        print(f"Received message: {data.decode()} from {addr}")
+        if (packet_length := len(data)) < 16:
+            log.error(
+                f"received packet length is {packet_length} is shorter than 16 bytes"
+            )
+
+        print(parse_udp_packet(data))
 
         # Send a response back to the sender
         response = b"Message received"
         self.transport.write(response, addr)
-        print(f"Sent response to {addr}")

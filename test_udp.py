@@ -10,7 +10,7 @@ def test_udp_support(host, port):
         udp_socket.settimeout(2)
 
         # Send a dummy message to the tracker
-        message = b"test message"
+        message = b"test message 121234afweafwae"
         udp_socket.sendto(message, (host, port))
 
         # Try to receive a response (if any)
