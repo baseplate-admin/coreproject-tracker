@@ -4,7 +4,8 @@ from twisted.web.resource import Resource
 from twisted.logger import Logger
 from twisted.web.server import Request
 from coreproject_tracker.functions.ip import is_valid_ip
-from coreproject_tracker.store.torrent import TorrentStore
+from coreproject_tracker.datastructures import DataStructure
+import bencodepy
 
 log = Logger(namespace="coreproject_tracker")
 
@@ -14,7 +15,7 @@ class AnnouncePage(Resource):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.torrent_store = TorrentStore()
+        self.datastore = DataStructure()
 
     def validate_data(self, request: Request) -> dict[str, str | int] | bytes:
         info_hash_raw = request.args.get(b"info_hash")[0]
@@ -64,7 +65,34 @@ class AnnouncePage(Resource):
         if isinstance(data, bytes):
             return data
 
-        self.torrent_store.add(data["info_hash"])
+        self.datastore.add_peer(
+            data["info_hash"], data["peer_ip"], data["port"], data["left"], 3600
+        )
+
+        peer_count = 0
+        peers = []
+        seeders = 0
+        leechers = 0
+
+        for peer in self.datastore.get_peers(data["info_hash"]):
+            if peer_count > data["numwant"]:
+                break
+
+            if peer.left == 0:
+                seeders += 1
+            else:
+                leechers += 1
+
+            peers.append((peer.peer_ip, peer.port))
+            peer_count += 1
+
+        output = {
+            "peers": peers,
+            "min interval": 60,
+            "complete": seeders,
+            "incomplete": leechers,
+        }
+        return bencodepy.bencode(output)
 
 
 class HTTPServer(Resource):
