@@ -5,6 +5,9 @@ from sqlalchemy import pool
 
 from alembic import context
 
+from src.coreproject_tracker import models as models
+from src.coreproject_tracker.models._base import Base
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -20,7 +23,6 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 # target_metadata = None
 
-from src.coreproject_tracker.models._base import Base
 
 target_metadata = Base.metadata
 
