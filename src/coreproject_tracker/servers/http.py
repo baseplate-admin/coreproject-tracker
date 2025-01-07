@@ -92,7 +92,6 @@ class AnnouncePage(Resource):
             "complete": seeders,
             "incomplete": leechers,
         }
-        print(output)
         return bencodepy.bencode(output)
 
 
