@@ -6,6 +6,7 @@ from twisted.web.server import Request
 from coreproject_tracker.functions.ip import is_valid_ip
 from coreproject_tracker.datastructures import DataStructure
 import bencodepy
+import hashlib
 
 log = Logger(namespace="coreproject_tracker")
 
@@ -100,14 +101,29 @@ class TorrentPage(Resource):
         super().__init__(*args, **kwargs)
         self.datastore = DataStructure()
 
-    def render_GET(self, request: Request):
-        pass
+    def render_POST(self, request: Request):
+        # Copied from https://stackoverflow.com/a/11549600
+        torrent_file = request.args[b"torrent_file"][0]
+        if not torrent_file:
+            return b"`torrent_file` is empty"
+
+        torrent_data = bencodepy.bdecode(torrent_file)
+
+        torrent_info = torrent_data[b"info"]
+        info_hash = hashlib.sha1(bencodepy.bencode(torrent_info)).hexdigest()
+        name = torrent_info.get(b"name", b"Unknown").decode()
+
+        return b"fas"
+
+    def render_GET(self, request):
+        return b"hello world"
 
 
 class HTTPServer(Resource):
     def __init__(self, opts=None):
         super().__init__()
         self.putChild(b"announce", AnnouncePage())
+        self.putChild(b"torrent", TorrentPage())
 
     def render_params(self, params):
         pass

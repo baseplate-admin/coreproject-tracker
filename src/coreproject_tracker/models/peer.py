@@ -47,7 +47,7 @@ class Peer(Base):
 
     # Unique constraint on combination of torrent, ip, port, and peer_id
     __table_args__ = (
-        UniqueConstraint("torrent_id", "ip", "port", "peer_id", name="_peer_unique"),
+        UniqueConstraint("torrent_id", "ip", "port", name="_peer_unique"),
     )
 
     def __repr__(self):
