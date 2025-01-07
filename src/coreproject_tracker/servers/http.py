@@ -96,7 +96,7 @@ class AnnouncePage(Resource):
 
 
 class HTTPServer(Resource):
-    def __init__(self, opts=None):
+    def __init__(self):
         super().__init__()
         self.putChild(b"announce", AnnouncePage())
 
