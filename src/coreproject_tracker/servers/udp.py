@@ -4,6 +4,8 @@ import struct
 from coreproject_tracker.common import CONNECTION_ID
 import enum
 from coreproject_tracker.datastructures import DataStructure
+from coreproject_tracker.functions.ip import addrs_to_compact
+from coreproject_tracker.constants.interval import ANNOUNCE_INTERVAL
 
 log = Logger(namespace="coreproject_tracker")
 
@@ -184,7 +186,32 @@ class UDPServer(DatagramProtocol):
             )
 
         param = self.parse_udp_packet(data, addr)
-        
+
+        if param["action"] == Actions.ANNOUNCE:
+            self.datastore.add_peer(
+                param["info_hash"], param["ip"], param["port"], param["left"], 3600
+            )
+
+            peer_count = 0
+            peers = []
+            seeders = 0
+            leechers = 0
+            for peer in self.datastore.get_peers(param["info_hash"]):
+                if peer_count > param["numwant"]:
+                    break
+
+                if peer.left == 0:
+                    seeders += 1
+                else:
+                    leechers += 1
+
+                peers.append(f"{peer.peer_ip}:{peer.port}")
+                peer_count += 1
+
+            param["peers"] = addrs_to_compact(peers)
+            param["complete"] = seeders
+            param["incomplete"] = leechers
+            param["interval"] = ANNOUNCE_INTERVAL
 
         res = self.make_udp_packet(param)
         self.transport.write(res, addr)
