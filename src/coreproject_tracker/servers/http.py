@@ -60,6 +60,10 @@ class AnnouncePage(Resource):
         }
 
     def render_GET(self, request: Request) -> bytes:
+        if request.args == {}:
+            request.setHeader("Content-Type", "text/html; charset=utf-8")
+            return "🐟🐈 ⸜(｡˃ ᵕ ˂ )⸝♡".encode("utf-8")
+
         data = self.validate_data(request)
         # If there is error in data, it should be in bytes
         if isinstance(data, bytes):
@@ -99,9 +103,3 @@ class HTTPServer(Resource):
     def __init__(self, opts=None):
         super().__init__()
         self.putChild(b"announce", AnnouncePage())
-
-    def render_params(self, params):
-        pass
-
-    def parse_request(self, request):
-        pass

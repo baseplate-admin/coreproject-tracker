@@ -2,8 +2,14 @@ import sys
 
 from twisted.internet import reactor
 from twisted.web.server import Site
-from coreproject_tracker.servers import HTTPServer, WebSocketFactory, UDPServer
+from coreproject_tracker.servers import (
+    HTTPServer,
+    UDPServer,
+    WebSocketServer,
+)
 from twisted.logger import textFileLogObserver, globalLogPublisher
+
+from autobahn.twisted.websocket import WebSocketServerFactory
 
 
 def make_app(udp_port=9999, http_port=8080, websocket_port=9000):
@@ -19,7 +25,8 @@ def make_app(udp_port=9999, http_port=8080, websocket_port=9000):
     reactor.listenTCP(http_port, http_site)
 
     # WebSocket Server
-    websocket_port = 9000
-    reactor.listenTCP(websocket_port, WebSocketFactory())
+    factory = WebSocketServerFactory()
+    factory.protocol = WebSocketServer
+    reactor.listenTCP(websocket_port, factory)
 
     return reactor

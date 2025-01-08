@@ -1,4 +1,5 @@
-from autobahn.twisted.websocket import WebSocketServerProtocol
+from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerFactory
+from twisted.internet import reactor
 
 
 class WebSocketServer(WebSocketServerProtocol):
@@ -18,3 +19,14 @@ class WebSocketServer(WebSocketServerProtocol):
 
     def onClose(self, wasClean, code, reason):
         print(f"WebSocket closed: {reason} (code: {code}, clean: {wasClean})")
+
+
+# Start the WebSocket server
+if __name__ == "__main__":
+    # Create the WebSocket server factory and bind it to the server address
+    factory = WebSocketServerFactory("ws://localhost:9000")
+    factory.protocol = WebSocketServer
+
+    reactor.listenTCP(9000, factory)  # Listen on port 9000
+    print("WebSocket server running at ws://localhost:9000")
+    reactor.run()
