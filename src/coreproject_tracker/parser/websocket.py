@@ -1,5 +1,6 @@
 import json
-from common import ACTIONS, MAX_ANNOUNCE_PEERS, REMOVE_IPV4_MAPPED_IPV6_RE, IPV6_RE
+
+from common import ACTIONS, IPV6_RE, MAX_ANNOUNCE_PEERS, REMOVE_IPV4_MAPPED_IPV6_RE
 
 
 def handle_ws_request(socket, opts, params):

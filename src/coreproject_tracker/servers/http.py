@@ -1,12 +1,14 @@
 import urllib.parse
 from http import HTTPStatus
-from twisted.web.resource import Resource
-from twisted.logger import Logger
-from twisted.web.server import Request
-from coreproject_tracker.functions.ip import is_valid_ip
-from coreproject_tracker.datastructures import DataStructure
+
 import bencodepy
+from twisted.logger import Logger
+from twisted.web.resource import Resource
+from twisted.web.server import Request
+
 from coreproject_tracker.constants.interval import ANNOUNCE_INTERVAL
+from coreproject_tracker.datastructures import DataStructure
+from coreproject_tracker.functions.ip import is_valid_ip
 
 log = Logger(namespace="coreproject_tracker")
 

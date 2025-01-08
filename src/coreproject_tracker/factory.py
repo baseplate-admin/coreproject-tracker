@@ -1,15 +1,15 @@
 import sys
 
+from autobahn.twisted.websocket import WebSocketServerFactory
 from twisted.internet import reactor
+from twisted.logger import globalLogPublisher, textFileLogObserver
 from twisted.web.server import Site
+
 from coreproject_tracker.servers import (
     HTTPServer,
     UDPServer,
     WebSocketServer,
 )
-from twisted.logger import textFileLogObserver, globalLogPublisher
-
-from autobahn.twisted.websocket import WebSocketServerFactory
 
 
 def make_app(udp_port=9000, http_port=8080, websocket_port=8000):

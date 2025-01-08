@@ -1,16 +1,18 @@
+import struct
+
 from twisted.internet.protocol import DatagramProtocol
 from twisted.logger import Logger
-import struct
-from coreproject_tracker.datastructures import DataStructure
-from coreproject_tracker.functions.ip import addrs_to_compact
+
+from coreproject_tracker.common import ACTIONS, EVENTS
 from coreproject_tracker.constants.interval import ANNOUNCE_INTERVAL
+from coreproject_tracker.datastructures import DataStructure
 from coreproject_tracker.functions.bytes import (
-    to_uint32,
     from_uint16,
     from_uint32,
     from_uint64,
+    to_uint32,
 )
-from coreproject_tracker.common import ACTIONS, EVENTS
+from coreproject_tracker.functions.ip import addrs_to_compact
 
 log = Logger(namespace="coreproject_tracker")
 CONNECTION_ID = (0x417 << 32) | 0x27101980

@@ -1,5 +1,5 @@
-import re
 import enum
+import re
 
 # Regular expressions
 IPV4_RE = re.compile(r"^[\d.]+$")

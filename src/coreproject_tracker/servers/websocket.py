@@ -1,6 +1,8 @@
 import json
-from coreproject_tracker.functions.convertion import binary_to_hex
+
 from autobahn.twisted.websocket import WebSocketServerProtocol
+
+from coreproject_tracker.functions.convertion import binary_to_hex
 
 
 class WebSocketServer(WebSocketServerProtocol):
@@ -63,6 +65,7 @@ class WebSocketServer(WebSocketServerProtocol):
     def onMessage(self, payload, isBinary):
         payload = payload.decode("utf8") if not isBinary else payload
         params = json.loads(payload)
+        print(params)
         try:
             data = self.parse_websocket(params)
         except ValueError as e:
