@@ -2,7 +2,8 @@ import time
 
 
 class Peer:
-    def __init__(self, peer_ip, port, left, ttl_seconds):
+    def __init__(self, peer_id, peer_ip, port, left, ttl_seconds):
+        self.peer_id = peer_id
         self.peer_ip = peer_ip
         self.port = port
         self.left = left
@@ -25,17 +26,15 @@ class Entity:
     def __init__(self):
         self.peers = set()  # Use a set to ensure uniqueness by peer_ip and port
 
-    def add_peer(self, peer_ip, port, left, ttl_seconds):
+    def add_peer(self, peer_id, peer_ip, port, left, ttl_seconds):
         """Add a new peer with a TTL to the entity (only if it's unique)."""
         # Create a new peer
-        peer = Peer(peer_ip, port, left, ttl_seconds)
+        peer = Peer(peer_id, peer_ip, port, left, ttl_seconds)
         # Add the peer to the set (set ensures uniqueness)
-        if peer not in self.peers:
-            self.peers.add(peer)
-        else:
-            print(
-                f"Peer ({peer_ip}, {port}) already exists in the entity and won't be added."
-            )
+        if peer in self.peers:
+            self.peers.remove(peer)
+
+        self.peers.add(peer)
 
     def remove_expired_peers(self):
         """Remove expired peers from the set."""
@@ -44,7 +43,12 @@ class Entity:
     def get_peers(self):
         """Return a list of active peers as tuples (peer_ip, port)."""
         self.remove_expired_peers()
-        return self.peers
+        return list(self.peers)
+
+    def has_active_peers(self):
+        """Check if the entity has any active peers."""
+        self.remove_expired_peers()
+        return bool(self.peers)
 
 
 class DataStructure:
@@ -64,14 +68,26 @@ class DataStructure:
             self.data = {}
             self.initialized = True
 
-    def add_peer(self, entity_id, peer_ip, port, left, ttl_seconds):
+    def add_peer(self, peer_id, entity_id, peer_ip, port, left, ttl_seconds):
         """Add a peer to an entity (ensure uniqueness, and create entity if needed)."""
+        self._collect_garbage()  # Perform garbage collection before adding a peer
         # Create an entity if it doesn't exist
         entity = self.data.setdefault(entity_id, Entity())
-        entity.add_peer(peer_ip, port, left, ttl_seconds)
+        entity.add_peer(peer_id, peer_ip, port, left, ttl_seconds)
 
     def get_peers(self, entity_id):
         """Get the active peers of an entity."""
+        self._collect_garbage()  # Perform garbage collection before retrieving peers
         if entity_id in self.data:
             return self.data[entity_id].get_peers()
         return []
+
+    def _collect_garbage(self):
+        """Aggressively remove expired peers and orphaned entities."""
+        to_delete = []
+        for entity_id, entity in self.data.items():
+            entity.remove_expired_peers()
+            if not entity.has_active_peers():
+                to_delete.append(entity_id)
+        for entity_id in to_delete:
+            del self.data[entity_id]

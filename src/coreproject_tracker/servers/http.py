@@ -1,4 +1,3 @@
-import urllib.parse
 from http import HTTPStatus
 
 import bencodepy
@@ -6,10 +5,11 @@ from twisted.logger import Logger
 from twisted.web.resource import Resource
 from twisted.web.server import Request
 
+from coreproject_tracker.common import DEFAULT_ANNOUNCE_PEERS, MAX_ANNOUNCE_PEERS
 from coreproject_tracker.constants.interval import ANNOUNCE_INTERVAL
 from coreproject_tracker.datastructures import DataStructure
+from coreproject_tracker.functions.convertion import binary_to_hex
 from coreproject_tracker.functions.ip import is_valid_ip
-from coreproject_tracker.common import DEFAULT_ANNOUNCE_PEERS, MAX_ANNOUNCE_PEERS
 
 log = Logger(namespace="coreproject_tracker")
 
@@ -24,15 +24,15 @@ class AnnouncePage(Resource):
     def validate_data(self, request: Request) -> dict[str, str | int] | bytes:
         params = {}
 
-        info_hash_raw = request.args.get(b"info_hash")[0]
-        info_hash = urllib.parse.unquote_to_bytes(info_hash_raw).hex()
+        info_hash_raw = request.args[b"info_hash"][0]
+        info_hash = info_hash_raw.hex()
         if (info_hash_length := len(info_hash_raw)) > 20:
             raise ValueError(
                 f"`info_hash` length is {info_hash_length} which is greater than 20"
             )
         params["info_hash"] = info_hash
 
-        port = request.args.get(b"port")[0].decode()
+        port = request.args[b"port"][0].decode()
         if not port.isdigit():
             raise ValueError("`port` is not an integer")
         port = int(port)
@@ -40,13 +40,13 @@ class AnnouncePage(Resource):
             raise ValueError(f"`port` is {port} which is not in range(0, 65535)")
         params["port"] = port
 
-        left = request.args.get(b"left")[0].decode()
+        left = request.args[b"left"][0].decode()
         if not left.isdigit():
             raise ValueError("`left` is not an integer")
         left = int(left)
         params["left"] = left
 
-        numwant = request.args.get(b"numwant")[0].decode()
+        numwant = request.args[b"numwant"][0].decode()
         if not numwant.isdigit():
             raise ValueError(b"`numwant` is not an integer")
         numwant = int(numwant)
@@ -56,6 +56,11 @@ class AnnouncePage(Resource):
         if not is_valid_ip(peer_ip):
             raise ValueError("`peer_ip` is not a valid ip")
         params["peer_ip"] = peer_ip
+
+        peer_id = request.args[b"peer_id"][0].decode()
+        if not isinstance(peer_id, str):
+            raise ValueError("`peer_id` must be a str")
+        params["peer_id"] = binary_to_hex(peer_id)
 
         return params
 
@@ -75,7 +80,12 @@ class AnnouncePage(Resource):
             return data
 
         self.datastore.add_peer(
-            data["info_hash"], data["peer_ip"], data["port"], data["left"], 3600
+            data["peer_id"],
+            data["info_hash"],
+            data["peer_ip"],
+            data["port"],
+            data["left"],
+            3600,
         )
 
         peer_count = 0
