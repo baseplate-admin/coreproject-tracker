@@ -21,7 +21,9 @@ class AnnouncePage(Resource, BaseRedisProtocol):
     isLeaf = True
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)  # Initialize parent class `Resource`
+        BaseRedisProtocol.__init__(self)  # Initialize `BaseRedisProtocol`
+        print(self.redis_client)
         self.datastore = DataStructure()
 
     def validate_data(self, request: Request) -> dict[str, str | int] | bytes:
@@ -82,6 +84,12 @@ class AnnouncePage(Resource, BaseRedisProtocol):
         if isinstance(data, bytes):
             return data
 
+        def on_peer_added(_):
+            # After storing the value, get the updated data
+            d2 = defer.ensureDeferred(self.get_value(data["info_hash"]))
+            d2.addCallback(self.handle_announce_response, data, request)
+            d2.addErrback(self.handle_announce_error, request)
+
         d1 = defer.ensureDeferred(
             self.store_value(
                 data["info_hash"],
@@ -91,10 +99,11 @@ class AnnouncePage(Resource, BaseRedisProtocol):
                     "port": data["port"],
                     "left": data["left"],
                 },
+                3600,
             )
         )
-        d1.addCallback(lambda _: print("Peer added"))
-        d1.addErrback(lambda _: print("Peer adding failed"))
+        d1.addCallback(on_peer_added)
+        d1.addErrback(self.handle_announce_error, request)
 
         d2 = defer.ensureDeferred(self.get_value(data["info_hash"]))
 
