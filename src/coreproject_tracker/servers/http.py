@@ -7,6 +7,7 @@ from coreproject_tracker.functions.ip import is_valid_ip
 from coreproject_tracker.datastructures import DataStructure
 import bencodepy
 from coreproject_tracker.constants.interval import ANNOUNCE_INTERVAL
+import inspect
 
 log = Logger(namespace="coreproject_tracker")
 
@@ -61,6 +62,12 @@ class AnnouncePage(Resource):
         }
 
     def render_GET(self, request: Request) -> bytes:
+        stack = inspect.stack()
+        for frame in stack:
+            print(
+                f"Function: {frame.function}, Line: {frame.lineno}, File: {frame.filename}"
+            )
+
         if request.args == {}:
             return b"Howdy"
 
@@ -100,12 +107,7 @@ class AnnouncePage(Resource):
 
 
 class HTTPServer(Resource):
-    isLeaf = True
-
     def __init__(self):
         super().__init__()
         self.putChild(b"announce", AnnouncePage())
         print(self.children)
-
-    def render_GET(self, request: Request) -> bytes:
-        return b"Hello world"

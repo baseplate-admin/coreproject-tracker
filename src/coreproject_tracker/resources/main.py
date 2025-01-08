@@ -8,6 +8,8 @@ class CombinedResource(Resource):
         self.http_resource = http_resource
         self.ws_resource = ws_resource
 
+        super().__init__()
+
     def render(self, request):
         # Check if the request is an HTTP request or WebSocket upgrade
         if request.getHeader(b"upgrade") == b"websocket":
