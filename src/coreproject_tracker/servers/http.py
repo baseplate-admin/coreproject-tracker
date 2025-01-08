@@ -1,4 +1,3 @@
-import urllib.parse
 from http import HTTPStatus
 
 import bencodepy
@@ -26,7 +25,7 @@ class AnnouncePage(Resource):
         params = {}
 
         info_hash_raw = request.args[b"info_hash"][0]
-        info_hash = urllib.parse.unquote_to_bytes(info_hash_raw).hex()
+        info_hash = info_hash_raw.hex()
         if (info_hash_length := len(info_hash_raw)) > 20:
             raise ValueError(
                 f"`info_hash` length is {info_hash_length} which is greater than 20"
