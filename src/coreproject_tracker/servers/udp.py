@@ -151,7 +151,12 @@ class UDPServer(DatagramProtocol):
 
         if param["action"] == ACTIONS.ANNOUNCE:
             self.datastore.add_peer(
-                param["info_hash"], param["ip"], param["port"], param["left"], 3600
+                param["peer_id"],
+                param["info_hash"],
+                param["ip"],
+                param["port"],
+                param["left"],
+                3600,
             )
 
             peer_count = 0

@@ -2,7 +2,7 @@ import json
 
 from autobahn.twisted.websocket import WebSocketServerProtocol
 
-from coreproject_tracker.functions.convertion import binary_to_hex
+from coreproject_tracker.functions.convertion import binary_to_hex, hex_to_bin
 
 
 class WebSocketServer(WebSocketServerProtocol):
@@ -43,11 +43,11 @@ class WebSocketServer(WebSocketServerProtocol):
                     if params["left"] is not None
                     else float("inf")
                 )
-            except (ValueError, TypeError):
+
+            except (ValueError, TypeError, KeyError):
                 params["left"] = float("inf")
 
-            offers = params.get("offers")
-            if offers:
+            if offers := params.get("offers"):
                 params["numwant"] = len(offers)
             else:
                 params["numwant"] = 50  # MAX_ANNOUNCE_PEERS
@@ -65,7 +65,7 @@ class WebSocketServer(WebSocketServerProtocol):
     def onMessage(self, payload, isBinary):
         payload = payload.decode("utf8") if not isBinary else payload
         params = json.loads(payload)
-        print(params)
+
         try:
             data = self.parse_websocket(params)
         except ValueError as e:
@@ -77,3 +77,39 @@ class WebSocketServer(WebSocketServerProtocol):
                 ),
                 isBinary,
             )
+
+        response = {}
+        response["action"] = data["action"]
+        peers = []
+
+        if response["action"] == "announce":
+            response.setdefault("peers", [])
+            peers = response.get("peers")
+            response["info_hash"] = hex_to_bin(params["info_hash"])
+            response["interval"] = 60 * 2
+
+        if not params.get("answer"):
+            self.sendMessage(json.loads(response), isBinary)
+
+        if (offers := params.get("offers")) and isinstance(offers, list):
+            for peer in peers:
+                ...
+                #  peers.forEach((peer, i) => {
+                #     peer.socket.send(
+                #         JSON.stringify({
+                #             action: 'announce',
+                #             offer: params.offers[i].offer,
+                #             offer_id: params.offers[i].offer_id,
+                #             peer_id: hex2bin(params.peer_id),
+                #             info_hash: hex2bin(params.info_hash),
+                #         }),
+                #         peer.socket.onSend
+                #     );
+                #     debug(
+                #         'sent offer to %s from %s',
+                #         peer.peerId,
+                #         params.peer_id
+                #     );
+                # });
+        if params.get("answer"):
+            pass

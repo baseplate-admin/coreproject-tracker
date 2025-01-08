@@ -4,3 +4,7 @@ def binary_to_hex(binary_string):
         "latin1"
     )  # Use 'latin1' encoding to preserve binary data
     return binary_bytes.hex()
+
+
+def hex_to_bin(hex_str):
+    return bytes.fromhex(hex_str).decode("latin1")

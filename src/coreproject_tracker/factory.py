@@ -12,7 +12,7 @@ from coreproject_tracker.servers import (
 )
 
 
-def make_app(udp_port=9000, http_port=8080, websocket_port=8000):
+def make_app(udp_port=9000, http_port=8000, websocket_port=8080):
     console_observer = textFileLogObserver(sys.stdout)
     globalLogPublisher.addObserver(console_observer)
 

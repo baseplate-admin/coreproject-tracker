@@ -1,0 +1,47 @@
+{
+    "numwant": 5,
+    "uploaded": 0,
+    "downloaded": 0,
+    "left": 30,
+    "event": "started",
+    "action": "announce",
+    "info_hash": "<(h3\x9e\x8fÛkº\x1c¢\x9dþ\x17xO®\x9dâe",
+    "peer_id": "-WW0205-XJZNCA2iv/VW",
+    "offers": [
+        {
+            "offer": {
+                "type": "offer",
+                "sdp": "v=0\r\no=rtc 1242604743 0 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=group:BUNDLE 0\r\na=msid-semantic:WMS *\r\na=setup:actpass\r\na=ice-ufrag:9TEk\r\na=ice-pwd:wblA+m03lUiy7pioQ73ADe\r\na=ice-options:ice2,trickle\r\na=fingerprint:sha-256 D8:A6:6B:C9:77:5A:1D:91:44:D2:4A:58:F8:C5:1A:04:65:A5:DD:DC:D6:37:23:F8:30:6F:7B:8A:3C:30:3C:FF\r\nm=application 62203 UDP/DTLS/SCTP webrtc-datachannel\r\nc=IN IP4 192.168.1.147\r\na=mid:0\r\na=sendrecv\r\na=sctp-port:5000\r\na=max-message-size:262144\r\na=candidate:1 1 UDP 2122317823 192.168.1.147 62203 typ host\r\na=candidate:2 1 UDP 2122317567 172.21.96.1 62203 typ host\r\na=candidate:3 1 UDP 1686109695 118.179.63.17 62203 typ srflx raddr 0.0.0.0 rport 0\r\na=end-of-candidates\r\n"
+            },
+            "offer_id": "ùb©½_\xa0X\x8e\x95\x91_\x9a,R\x8e\x80l\xa0\x8aß"
+        },
+        {
+            "offer": {
+                "type": "offer",
+                "sdp": "v=0\r\no=rtc 3673850601 0 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=group:BUNDLE 0\r\na=msid-semantic:WMS *\r\na=setup:actpass\r\na=ice-ufrag:ceOg\r\na=ice-pwd:M/Xm0DfZ5+QxAJlGQrhgxk\r\na=ice-options:ice2,trickle\r\na=fingerprint:sha-256 BE:48:A8:76:DB:F0:81:1B:38:60:FE:07:BF:42:2E:C3:E5:4C:BA:02:A8:5A:EB:7C:83:75:F5:D3:B5:93:C4:28\r\nm=application 62204 UDP/DTLS/SCTP webrtc-datachannel\r\nc=IN IP4 192.168.1.147\r\na=mid:0\r\na=sendrecv\r\na=sctp-port:5000\r\na=max-message-size:262144\r\na=candidate:1 1 UDP 2122317823 192.168.1.147 62204 typ host\r\na=candidate:2 1 UDP 2122317567 172.21.96.1 62204 typ host\r\na=candidate:3 1 UDP 1686109695 118.179.63.17 62204 typ srflx raddr 0.0.0.0 rport 0\r\na=end-of-candidates\r\n"
+            },
+            "offer_id": "\x10XY¶\x84¾¨Ð\x1eº8ÅÜ\x1fû/{&Ó0"
+        },
+        {
+            "offer": {
+                "type": "offer",
+                "sdp": "v=0\r\no=rtc 2832831547 0 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=group:BUNDLE 0\r\na=msid-semantic:WMS *\r\na=setup:actpass\r\na=ice-ufrag:uayV\r\na=ice-pwd:5Xt0KlO3L4h64TlZhptrSy\r\na=ice-options:ice2,trickle\r\na=fingerprint:sha-256 56:4F:97:96:C4:21:84:82:D9:B5:E0:99:44:44:86:65:67:86:B2:D9:E0:30:D4:5D:9D:C1:77:A9:DE:A1:87:35\r\nm=application 62205 UDP/DTLS/SCTP webrtc-datachannel\r\nc=IN IP4 192.168.1.147\r\na=mid:0\r\na=sendrecv\r\na=sctp-port:5000\r\na=max-message-size:262144\r\na=candidate:1 1 UDP 2122317823 192.168.1.147 62205 typ host\r\na=candidate:2 1 UDP 2122317567 172.21.96.1 62205 typ host\r\na=candidate:3 1 UDP 1686109695 118.179.63.17 62205 typ srflx raddr 0.0.0.0 rport 0\r\na=end-of-candidates\r\n"
+            },
+            "offer_id": "\x87jKoÊ\x0fÞ¯\x96¦\x8e\x84\x9e\x1b¬ì\x17&bô"
+        },
+        {
+            "offer": {
+                "type": "offer",
+                "sdp": "v=0\r\no=rtc 4154147584 0 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=group:BUNDLE 0\r\na=msid-semantic:WMS *\r\na=setup:actpass\r\na=ice-ufrag:Py23\r\na=ice-pwd:QE6Pz1SrslsqDCf1vSKCWn\r\na=ice-options:ice2,trickle\r\na=fingerprint:sha-256 23:D9:AF:28:04:06:2A:49:65:28:53:92:20:B0:36:A4:A0:1E:58:B8:17:0B:C5:67:68:32:11:34:68:FC:A9:A8\r\nm=application 62206 UDP/DTLS/SCTP webrtc-datachannel\r\nc=IN IP4 192.168.1.147\r\na=mid:0\r\na=sendrecv\r\na=sctp-port:5000\r\na=max-message-size:262144\r\na=candidate:1 1 UDP 2122317823 192.168.1.147 62206 typ host\r\na=candidate:2 1 UDP 2122317567 172.21.96.1 62206 typ host\r\na=candidate:3 1 UDP 1686109695 118.179.63.17 62206 typ srflx raddr 0.0.0.0 rport 0\r\na=end-of-candidates\r\n"
+            },
+            "offer_id": "U\x90'\x91%\nöt\x87òÄùIù\x81æÖ*=Å"
+        },
+        {
+            "offer": {
+                "type": "offer",
+                "sdp": "v=0\r\no=rtc 4211849732 0 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=group:BUNDLE 0\r\na=msid-semantic:WMS *\r\na=setup:actpass\r\na=ice-ufrag:d9p5\r\na=ice-pwd:sEh8CE20lDhHSCVnJV1Jbt\r\na=ice-options:ice2,trickle\r\na=fingerprint:sha-256 55:2D:54:3D:A2:AD:6A:AB:B8:D6:E0:78:1E:9D:C2:FC:AB:BF:53:4F:84:F7:EC:F4:93:AB:76:AA:AD:D0:A8:8F\r\nm=application 62207 UDP/DTLS/SCTP webrtc-datachannel\r\nc=IN IP4 192.168.1.147\r\na=mid:0\r\na=sendrecv\r\na=sctp-port:5000\r\na=max-message-size:262144\r\na=candidate:1 1 UDP 2122317823 192.168.1.147 62207 typ host\r\na=candidate:2 1 UDP 2122317567 172.21.96.1 62207 typ host\r\na=candidate:3 1 UDP 1686109695 118.179.63.17 62207 typ srflx raddr 0.0.0.0 rport 0\r\na=end-of-candidates\r\n"
+            },
+            "offer_id": "\x8dûj\x9e\x93í£±\x07\x96\x08<Ñ5J\x9bQe\xadº"
+        }
+    ]
+}
