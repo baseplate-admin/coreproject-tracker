@@ -2,10 +2,14 @@ import json
 
 from autobahn.twisted.websocket import WebSocketServerProtocol
 
+from coreproject_tracker.datastructures import DataStructure
 from coreproject_tracker.functions.convertion import binary_to_hex, hex_to_bin
 
 
 class WebSocketServer(WebSocketServerProtocol):
+    def __init__(self):
+        self.datastore = DataStructure()
+
     def parse_websocket(self, params={}):
         params["type"] = "ws"
 
@@ -112,4 +116,4 @@ class WebSocketServer(WebSocketServerProtocol):
                 #     );
                 # });
         if params.get("answer"):
-            pass
+            to_peer = self.datastore.get_peers()

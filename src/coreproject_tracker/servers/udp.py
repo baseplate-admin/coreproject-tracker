@@ -20,7 +20,7 @@ CONNECTION_ID = (0x417 << 32) | 0x27101980
 
 class UDPServer(DatagramProtocol):
     def __init__(self, *args, **kwargs):
-        self.data = self.datastore = DataStructure()
+        self.datastore = DataStructure()
 
     def make_udp_packet(self, params: dict[str, int | bytes | dict]) -> bytes:
         """
