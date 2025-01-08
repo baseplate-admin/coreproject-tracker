@@ -2,24 +2,26 @@ import sys
 
 from twisted.internet import reactor
 from twisted.web.server import Site
-from coreproject_tracker.servers import HTTPServer, WebSocketFactory, UDPServer
+from coreproject_tracker.servers import HTTPServer, UDPServer
 from twisted.logger import textFileLogObserver, globalLogPublisher
+from twisted.web import resource
 
 
-def make_app(udp_port=8000, http_port=8080, websocket_port=9000):
+def make_app(PORT=3000):
     console_observer = textFileLogObserver(sys.stdout)
     globalLogPublisher.addObserver(console_observer)
 
     # UDP Server
-    reactor.listenUDP(udp_port, UDPServer())
+    udp = UDPServer()
 
     # HTTP Server
-    root = HTTPServer()
-    http_site = Site(root)
-    reactor.listenTCP(http_port, http_site)
+    root = resource.Resource()
+    http_resource = HTTPServer()
+    root.putChild(b"", http_resource)
 
-    # WebSocket Server
-    websocket_port = 9000
-    reactor.listenTCP(websocket_port, WebSocketFactory())
+    site = Site(root)
+
+    reactor.listenTCP(PORT, site)
+    reactor.listenUDP(PORT, udp)
 
     return reactor

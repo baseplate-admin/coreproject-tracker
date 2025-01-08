@@ -4,7 +4,7 @@ from twisted.internet import protocol
 
 
 class WebSocketServer(LineReceiver):
-    def __init__(self, opts=None):
+    def __init__(self):
         pass
 
     def connectionMade(self):
@@ -26,13 +26,3 @@ class WebSocketServer(LineReceiver):
     def sendError(self, error_message):
         # Send an error message back to the client
         pass
-
-
-class WebSocketFactory(protocol.ServerFactory):
-    protocol = WebSocketServer
-
-    def __init__(self):
-        super().__init__()
-
-    def buildProtocol(self, addr):
-        return WebSocketServer(self.opts)
