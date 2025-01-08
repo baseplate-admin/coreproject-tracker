@@ -174,16 +174,28 @@ class WebSocketServer(WebSocketServerProtocol):
 
         response = {}
         response["action"] = data["action"]
+        self.datastore.add_peer(
+            data["peer_id"],
+            data["info_hash"],
+            data["ip"],
+            data["port"],
+            data["left"],
+            3600,
+        )
+
+        seeders = 0
+        leechers = 0
+        peers = self.datastore.get_peers(data["info_hash"])
+        for peer in peers:
+            if peer.left == 0:
+                seeders += 1
+            else:
+                leechers += 1
+
+        response["completed"] = seeders
+        response["incompleted"] = leechers
 
         if response["action"] == "announce":
-            self.datastore.add_peer(
-                data["peer_id"],
-                data["info_hash"],
-                data["ip"],
-                data["port"],
-                data["left"],
-                3600,
-            )
             response["info_hash"] = hex_to_bin(params["info_hash"])
             response["interval"] = 60 * 2
             self.sendMessage(json.dumps(response).encode(), isBinary)
@@ -192,8 +204,6 @@ class WebSocketServer(WebSocketServerProtocol):
             self.sendMessage(json.dumps(response).encode(), isBinary)
 
         self.connection_manager.add_connection(data["peer_id"], self)
-
-        peers = self.datastore.get_peers(data["info_hash"])
 
         if (offers := params.get("offers")) and isinstance(offers, list):
             for index, peer in enumerate(peers):
