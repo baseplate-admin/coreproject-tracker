@@ -19,46 +19,46 @@ class AnnouncePage(Resource):
         self.datastore = DataStructure()
 
     def validate_data(self, request: Request) -> dict[str, str | int] | bytes:
+        params = {}
+
         info_hash_raw = request.args.get(b"info_hash")[0]
         info_hash = urllib.parse.unquote_to_bytes(info_hash_raw).hex()
         if (info_hash_length := len(info_hash_raw)) > 20:
             request.setResponseCode(HTTPStatus.BAD_REQUEST)
             return f"`info_hash` length is {info_hash_length} which is greater than 20".encode()
+        params["info_hash"] = info_hash
 
         port = request.args.get(b"port")[0].decode()
         if not port.isdigit():
             request.setResponseCode(HTTPStatus.BAD_REQUEST)
             return "`port` is not an integer".encode()
-
         port = int(port)
         if port <= 0 and port >= 65535:
             request.setResponseCode(HTTPStatus.BAD_REQUEST)
             return f"`port` is {port} which is not in range(0, 65535)".encode()
+        params["port"] = port
 
         left = request.args.get(b"left")[0].decode()
         if not left.isdigit():
             request.setResponseCode(HTTPStatus.BAD_REQUEST)
             return "`left` is not an integer".encode()
         left = int(left)
+        params["left"] = left
 
         numwant = request.args.get(b"numwant")[0].decode()
         if not numwant.isdigit():
             request.setResponseCode(HTTPStatus.BAD_REQUEST)
             return b"`numwant` is not an integer"
         numwant = int(numwant)
+        params["numwant"] = numwant
 
         peer_ip = request.getClientAddress().host
         if not is_valid_ip(peer_ip):
             request.setResponseCode(HTTPStatus.BAD_REQUEST)
             return "`peer_ip` is not a valid ip".encode()
+        params["peer_ip"] = peer_ip
 
-        return {
-            "info_hash": info_hash,
-            "port": port,
-            "left": left,
-            "numwant": numwant,
-            "peer_ip": peer_ip,
-        }
+        return params
 
     def render_GET(self, request: Request) -> bytes:
         if request.args == {}:

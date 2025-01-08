@@ -12,7 +12,7 @@ from twisted.logger import textFileLogObserver, globalLogPublisher
 from autobahn.twisted.websocket import WebSocketServerFactory
 
 
-def make_app(udp_port=8000, http_port=8080, websocket_port=9000):
+def make_app(udp_port=9000, http_port=8080, websocket_port=8000):
     console_observer = textFileLogObserver(sys.stdout)
     globalLogPublisher.addObserver(console_observer)
 
