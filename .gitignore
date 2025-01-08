@@ -112,6 +112,7 @@ dmypy.json
 
 # Texts
 *.txt
+# !test-torrent.txt
 
 # Lock file ignore
 *.lock

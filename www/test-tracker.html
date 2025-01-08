@@ -25,7 +25,7 @@
             document
                 .getElementById('seed-btn')
                 .addEventListener('click', () => {
-                    const file = new File(['Hello Torrent!'], 'testfile.txt');
+                    const file = new File(['Hello Torrent!'], 'test-torrent.txt');
                     client.seed(file, { announce: trackerURLs }, (torrent) => {
                         status.innerHTML = `<p>Seeding: ${torrent.magnetURI}</p>`;
                         console.log('Seeding:', torrent.infoHash);
