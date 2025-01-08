@@ -8,7 +8,7 @@ from twisted.web.server import Request
 from coreproject_tracker.common import DEFAULT_ANNOUNCE_PEERS, MAX_ANNOUNCE_PEERS
 from coreproject_tracker.constants.interval import ANNOUNCE_INTERVAL
 from coreproject_tracker.datastructures import DataStructure
-from coreproject_tracker.functions.convertion import binary_to_hex
+from coreproject_tracker.functions.convertion import bin_to_hex
 from coreproject_tracker.functions.ip import is_valid_ip
 
 log = Logger(namespace="coreproject_tracker")
@@ -60,7 +60,7 @@ class AnnouncePage(Resource):
         peer_id = request.args[b"peer_id"][0].decode()
         if not isinstance(peer_id, str):
             raise ValueError("`peer_id` must be a str")
-        params["peer_id"] = binary_to_hex(peer_id)
+        params["peer_id"] = bin_to_hex(peer_id)
 
         return params
 

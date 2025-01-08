@@ -7,7 +7,7 @@ from typing import Optional
 from autobahn.twisted.websocket import WebSocketServerProtocol
 
 from coreproject_tracker.datastructures import DataStructure
-from coreproject_tracker.functions.convertion import binary_to_hex, hex_to_bin
+from coreproject_tracker.functions.convertion import bin_to_hex, hex_to_bin
 
 
 class ConnectionManager:
@@ -112,7 +112,7 @@ class WebSocketServer(WebSocketServerProtocol):
                 raise ValueError(
                     f"`info_hash` is not a 20 bytes, it is {info_hash_length}"
                 )
-            info_hash = binary_to_hex(info_hash_raw)
+            info_hash = bin_to_hex(info_hash_raw)
             params["info_hash"] = info_hash
 
             peer_id = params["peer_id"]
@@ -120,7 +120,7 @@ class WebSocketServer(WebSocketServerProtocol):
                 raise ValueError("`peer_id` is not a str")
             if (peer_id_length := len(peer_id)) != 20:
                 raise ValueError(f"`peer_id` is not a 20 bytes, it is {peer_id_length}")
-            params["peer_id"] = binary_to_hex(peer_id)
+            params["peer_id"] = bin_to_hex(peer_id)
 
             if params.get("answer", None):
                 to_peer_id = params["to_peer_id"]
@@ -130,7 +130,7 @@ class WebSocketServer(WebSocketServerProtocol):
                     raise ValueError(
                         f"`to_peer_id` is not a 20 bytes, it is {to_peer_id_length}"
                     )
-                to_peer_id = binary_to_hex(to_peer_id)
+                to_peer_id = bin_to_hex(to_peer_id)
 
             try:
                 params["left"] = (
