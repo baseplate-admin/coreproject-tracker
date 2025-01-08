@@ -1,12 +1,15 @@
 import urllib.parse
 from http import HTTPStatus
-from twisted.web.resource import Resource
-from twisted.logger import Logger
-from twisted.web.server import Request
-from coreproject_tracker.functions.ip import is_valid_ip
-from coreproject_tracker.datastructures import DataStructure
+
 import bencodepy
+from twisted.logger import Logger
+from twisted.web.resource import Resource
+from twisted.web.server import Request
+
 from coreproject_tracker.constants.interval import ANNOUNCE_INTERVAL
+from coreproject_tracker.datastructures import DataStructure
+from coreproject_tracker.functions.ip import is_valid_ip
+from coreproject_tracker.common import DEFAULT_ANNOUNCE_PEERS, MAX_ANNOUNCE_PEERS
 
 log = Logger(namespace="coreproject_tracker")
 
@@ -19,49 +22,54 @@ class AnnouncePage(Resource):
         self.datastore = DataStructure()
 
     def validate_data(self, request: Request) -> dict[str, str | int] | bytes:
+        params = {}
+
         info_hash_raw = request.args.get(b"info_hash")[0]
         info_hash = urllib.parse.unquote_to_bytes(info_hash_raw).hex()
         if (info_hash_length := len(info_hash_raw)) > 20:
-            request.setResponseCode(HTTPStatus.BAD_REQUEST)
-            return f"`info_hash` length is {info_hash_length} which is greater than 20".encode()
+            raise ValueError(
+                f"`info_hash` length is {info_hash_length} which is greater than 20"
+            )
+        params["info_hash"] = info_hash
 
         port = request.args.get(b"port")[0].decode()
         if not port.isdigit():
-            request.setResponseCode(HTTPStatus.BAD_REQUEST)
-            return "`port` is not an integer".encode()
-
+            raise ValueError("`port` is not an integer")
         port = int(port)
         if port <= 0 and port >= 65535:
-            request.setResponseCode(HTTPStatus.BAD_REQUEST)
-            return f"`port` is {port} which is not in range(0, 65535)".encode()
+            raise ValueError(f"`port` is {port} which is not in range(0, 65535)")
+        params["port"] = port
 
         left = request.args.get(b"left")[0].decode()
         if not left.isdigit():
-            request.setResponseCode(HTTPStatus.BAD_REQUEST)
-            return "`left` is not an integer".encode()
+            raise ValueError("`left` is not an integer")
         left = int(left)
+        params["left"] = left
 
         numwant = request.args.get(b"numwant")[0].decode()
         if not numwant.isdigit():
-            request.setResponseCode(HTTPStatus.BAD_REQUEST)
-            return b"`numwant` is not an integer"
+            raise ValueError(b"`numwant` is not an integer")
         numwant = int(numwant)
+        params["numwant"] = min(numwant or DEFAULT_ANNOUNCE_PEERS, MAX_ANNOUNCE_PEERS)
 
         peer_ip = request.getClientAddress().host
         if not is_valid_ip(peer_ip):
-            request.setResponseCode(HTTPStatus.BAD_REQUEST)
-            return "`peer_ip` is not a valid ip".encode()
+            raise ValueError("`peer_ip` is not a valid ip")
+        params["peer_ip"] = peer_ip
 
-        return {
-            "info_hash": info_hash,
-            "port": port,
-            "left": left,
-            "numwant": numwant,
-            "peer_ip": peer_ip,
-        }
+        return params
 
     def render_GET(self, request: Request) -> bytes:
-        data = self.validate_data(request)
+        if request.args == {}:
+            request.setHeader("Content-Type", "text/html; charset=utf-8")
+            return "🐟🐈 ⸜(｡˃ ᵕ ˂ )⸝♡".encode("utf-8")
+
+        try:
+            data = self.validate_data(request)
+        except ValueError as e:
+            request.setResponseCode(HTTPStatus.BAD_REQUEST)
+            return bencodepy.bencode({"failure reason": e})
+
         # If there is error in data, it should be in bytes
         if isinstance(data, bytes):
             return data
@@ -100,9 +108,3 @@ class HTTPServer(Resource):
     def __init__(self):
         super().__init__()
         self.putChild(b"announce", AnnouncePage())
-
-    def render_params(self, params):
-        pass
-
-    def parse_request(self, request):
-        pass
