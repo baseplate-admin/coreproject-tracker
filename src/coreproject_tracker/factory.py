@@ -1,6 +1,7 @@
 import sys
 
 from autobahn.twisted.websocket import WebSocketServerFactory
+from redis.asyncio import Redis
 from twisted.internet import reactor
 from twisted.logger import globalLogPublisher, textFileLogObserver
 from twisted.web.server import Site

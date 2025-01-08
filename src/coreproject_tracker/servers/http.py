@@ -1,7 +1,9 @@
 from http import HTTPStatus
 
 import bencodepy
+from twisted.internet import defer
 from twisted.logger import Logger
+from twisted.web import server
 from twisted.web.resource import Resource
 from twisted.web.server import Request
 
@@ -10,11 +12,12 @@ from coreproject_tracker.constants.interval import ANNOUNCE_INTERVAL
 from coreproject_tracker.datastructures import DataStructure
 from coreproject_tracker.functions.convertion import bin_to_hex
 from coreproject_tracker.functions.ip import is_valid_ip
+from coreproject_tracker.protocols.redis import BaseRedisProtocol
 
 log = Logger(namespace="coreproject_tracker")
 
 
-class AnnouncePage(Resource):
+class AnnouncePage(Resource, BaseRedisProtocol):
     isLeaf = True
 
     def __init__(self, *args, **kwargs):
@@ -79,39 +82,52 @@ class AnnouncePage(Resource):
         if isinstance(data, bytes):
             return data
 
-        self.datastore.add_peer(
-            data["peer_id"],
-            data["info_hash"],
-            data["peer_ip"],
-            data["port"],
-            data["left"],
-            3600,
+        d1 = defer.ensureDeferred(
+            self.store_value(
+                data["info_hash"],
+                {
+                    "peer_id": data["peer_id"],
+                    "peer_ip": data["peer_ip"],
+                    "port": data["port"],
+                    "left": data["left"],
+                },
+            )
         )
+        d1.addCallback(lambda _: print("Peer added"))
+        d1.addErrback(lambda _: print("Peer adding failed"))
 
-        peer_count = 0
-        peers = []
-        seeders = 0
-        leechers = 0
+        d2 = defer.ensureDeferred(self.get_value(data["info_hash"]))
 
-        for peer in self.datastore.get_peers(data["info_hash"]):
-            if peer_count > data["numwant"]:
-                break
+        def handle_response(result):
+            peer_count = 0
+            peers = []
+            seeders = 0
+            leechers = 0
 
-            if peer.left == 0:
-                seeders += 1
-            else:
-                leechers += 1
+            for peer in result:
+                if peer_count > data["numwant"]:
+                    break
 
-            peers.append({"ip": peer.peer_ip, "port": peer.port})
-            peer_count += 1
+                if peer.left == 0:
+                    seeders += 1
+                else:
+                    leechers += 1
 
-        output = {
-            "peers": peers,
-            "min interval": ANNOUNCE_INTERVAL,
-            "complete": seeders,
-            "incomplete": leechers,
-        }
-        return bencodepy.bencode(output)
+                peers.append({"ip": peer.peer_ip, "port": peer.port})
+                peer_count += 1
+
+            output = {
+                "peers": peers,
+                "min interval": ANNOUNCE_INTERVAL,
+                "complete": seeders,
+                "incomplete": leechers,
+            }
+
+            return bencodepy.bencode(output)
+
+        d2.addCallback(handle_response)
+        request.notifyFinish().addErrback(lambda _: None)
+        return server.NOT_DONE_YET
 
 
 class HTTPServer(Resource):
