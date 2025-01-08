@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>WebSocket Check</title>
+    </head>
+    <body>
+        <h1>WebSocket Connection Test</h1>
+        <div id="status">Connecting...</div>
+
+        <script>
+            // Create WebSocket connection.
+            const socket = new WebSocket('ws://localhost:8080/'); // Replace with your WebSocket URL
+
+            // Display status on the page
+            const statusDiv = document.getElementById('status');
+
+            // Check if the WebSocket is open
+            socket.addEventListener('open', function (event) {
+                console.log('WebSocket is open and working!');
+                statusDiv.textContent = 'WebSocket is connected.';
+                statusDiv.style.color = 'green';
+            });
+
+            // Check for messages from the server
+            socket.addEventListener('message', function (event) {
+                console.log('Message from server:', event.data);
+                // You can optionally display this message on the page
+                const messageDiv = document.createElement('div');
+                messageDiv.textContent = 'Message from server: ' + event.data;
+                document.body.appendChild(messageDiv);
+            });
+
+            // Check for WebSocket close event
+            socket.addEventListener('close', function (event) {
+                if (event.wasClean) {
+                    console.log('WebSocket closed cleanly.');
+                    statusDiv.textContent = 'WebSocket closed cleanly.';
+                } else {
+                    console.error('WebSocket closed unexpectedly!');
+                    statusDiv.textContent = 'WebSocket closed unexpectedly!';
+                    statusDiv.style.color = 'red';
+                }
+            });
+
+            // Check for WebSocket errors
+            socket.addEventListener('error', function (error) {
+                console.error('WebSocket Error:', error);
+                statusDiv.textContent = 'WebSocket error occurred.';
+                statusDiv.style.color = 'red';
+            });
+        </script>
+    </body>
+</html>
