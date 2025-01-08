@@ -1,7 +1,8 @@
 import WebTorrent from "webtorrent"
 
 const trackerUrls = [
-  'udp://127.0.0.1:9000',
+  // 'udp://127.0.0.1:9000',
+  'http://127.0.0.1:8000',
 ]
 const file = new File(['Hello Torrent!'], 'test-torrent.txt', { type: 'text/plain' })
 
