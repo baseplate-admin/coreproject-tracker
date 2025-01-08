@@ -45,7 +45,12 @@ class Entity:
     def get_peers(self):
         """Return a list of active peers as tuples (peer_ip, port)."""
         self.remove_expired_peers()
-        return self.peers
+        return list(self.peers)
+
+    def has_active_peers(self):
+        """Check if the entity has any active peers."""
+        self.remove_expired_peers()
+        return bool(self.peers)
 
 
 class DataStructure:
@@ -67,12 +72,24 @@ class DataStructure:
 
     def add_peer(self, peer_id, entity_id, peer_ip, port, left, ttl_seconds):
         """Add a peer to an entity (ensure uniqueness, and create entity if needed)."""
+        self._collect_garbage()  # Perform garbage collection before adding a peer
         # Create an entity if it doesn't exist
         entity = self.data.setdefault(entity_id, Entity())
         entity.add_peer(peer_id, peer_ip, port, left, ttl_seconds)
 
     def get_peers(self, entity_id):
         """Get the active peers of an entity."""
+        self._collect_garbage()  # Perform garbage collection before retrieving peers
         if entity_id in self.data:
             return self.data[entity_id].get_peers()
         return []
+
+    def _collect_garbage(self):
+        """Aggressively remove expired peers and orphaned entities."""
+        to_delete = []
+        for entity_id, entity in self.data.items():
+            entity.remove_expired_peers()
+            if not entity.has_active_peers():
+                to_delete.append(entity_id)
+        for entity_id in to_delete:
+            del self.data[entity_id]

@@ -25,3 +25,10 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poe.tasks]
 dev = "python ./src/coreproject_tracker/run.py"
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+ignore = ["E501", "C901"]
+select = ["I", "E", "F", "W", "C"]
