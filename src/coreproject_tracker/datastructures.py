@@ -31,12 +31,10 @@ class Entity:
         # Create a new peer
         peer = Peer(peer_id, peer_ip, port, left, ttl_seconds)
         # Add the peer to the set (set ensures uniqueness)
-        if peer not in self.peers:
-            self.peers.add(peer)
-        else:
-            print(
-                f"Peer ({peer_ip}, {port}) already exists in the entity and won't be added."
-            )
+        if peer in self.peers:
+            self.peers.remove(peer)
+
+        self.peers.add(peer)
 
     def remove_expired_peers(self):
         """Remove expired peers from the set."""

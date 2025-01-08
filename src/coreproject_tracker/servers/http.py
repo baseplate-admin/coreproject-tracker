@@ -1,4 +1,3 @@
-import urllib.parse
 from http import HTTPStatus
 
 import bencodepy
@@ -6,11 +5,11 @@ from twisted.logger import Logger
 from twisted.web.resource import Resource
 from twisted.web.server import Request
 
+from coreproject_tracker.common import DEFAULT_ANNOUNCE_PEERS, MAX_ANNOUNCE_PEERS
 from coreproject_tracker.constants.interval import ANNOUNCE_INTERVAL
 from coreproject_tracker.datastructures import DataStructure
-from coreproject_tracker.functions.ip import is_valid_ip
-from coreproject_tracker.common import DEFAULT_ANNOUNCE_PEERS, MAX_ANNOUNCE_PEERS
 from coreproject_tracker.functions.convertion import binary_to_hex
+from coreproject_tracker.functions.ip import is_valid_ip
 
 log = Logger(namespace="coreproject_tracker")
 
@@ -26,7 +25,7 @@ class AnnouncePage(Resource):
         params = {}
 
         info_hash_raw = request.args[b"info_hash"][0]
-        info_hash = urllib.parse.unquote_to_bytes(info_hash_raw).hex()
+        info_hash = info_hash_raw.hex()
         if (info_hash_length := len(info_hash_raw)) > 20:
             raise ValueError(
                 f"`info_hash` length is {info_hash_length} which is greater than 20"
