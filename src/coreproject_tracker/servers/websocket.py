@@ -75,30 +75,12 @@ class ConnectionManager:
         for identifier in dead_connections:
             self.remove_connection(identifier)
 
-    def broadcast(self, message: str) -> None:
-        """Send a message to all connected clients and update their activity timestamps"""
-        with self._lock:
-            current_time = time.time()
-            dead_connections = []
-
-            for identifier, (connection_ref, _) in self._connections.items():
-                connection = connection_ref()
-                if connection is not None and connection.connected:
-                    connection.sendMessage(message.encode("utf-8"))
-                    # Update last activity time
-                    self._connections[identifier] = (connection_ref, current_time)
-                else:
-                    dead_connections.append(identifier)
-
-            # Clean up dead connections
-            for identifier in dead_connections:
-                self.remove_connection(identifier)
-
 
 class WebSocketServer(WebSocketServerProtocol):
     connection_manager = ConnectionManager(inactive_timeout=600)
 
     def __init__(self):
+        super().__init__()
         self.datastore = DataStructure()
 
     def parse_websocket(self, params={}):
@@ -122,7 +104,7 @@ class WebSocketServer(WebSocketServerProtocol):
                 raise ValueError(f"`peer_id` is not a 20 bytes, it is {peer_id_length}")
             params["peer_id"] = bin_to_hex(peer_id)
 
-            if params.get("answer", None):
+            if params.get("answer"):
                 to_peer_id = params["to_peer_id"]
                 if not isinstance(to_peer_id, str):
                     raise ValueError("`to_peer_id` is not a str")
@@ -218,23 +200,25 @@ class WebSocketServer(WebSocketServerProtocol):
                             "info_hash": hex_to_bin(params["info_hash"]),
                         }
                     ).encode(),
+                    isBinary,
                 )
-
         if params.get("answer"):
-            to_peer = self.connection_manager.get_connection(data["to_peer_id"])
+            to_peer = self.connection_manager.get_connection(
+                bin_to_hex(data["to_peer_id"])
+            )
 
             if not to_peer:
                 print("No `to_peer` found")
-
-            to_peer.sendMessage(
-                json.dumps(
-                    {
-                        "action": "announce",
-                        "answer": params["answer"],
-                        "offer_id": params["offer_id"],
-                        "peer_id": hex_to_bin(params["peer_id"]),
-                        "info_hash": hex_to_bin(params["info_hash"]),
-                    }
-                ).encode(),
-                isBinary,
-            )
+            else:
+                to_peer.sendMessage(
+                    json.dumps(
+                        {
+                            "action": "announce",
+                            "answer": params["answer"],
+                            "offer_id": params["offer_id"],
+                            "peer_id": hex_to_bin(params["peer_id"]),
+                            "info_hash": hex_to_bin(params["info_hash"]),
+                        }
+                    ).encode(),
+                    isBinary,
+                )
