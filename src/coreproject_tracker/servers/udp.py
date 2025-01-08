@@ -1,13 +1,19 @@
 from twisted.internet.protocol import DatagramProtocol
 from twisted.logger import Logger
 import struct
-from coreproject_tracker.common import CONNECTION_ID
 import enum
 from coreproject_tracker.datastructures import DataStructure
 from coreproject_tracker.functions.ip import addrs_to_compact
 from coreproject_tracker.constants.interval import ANNOUNCE_INTERVAL
+from coreproject_tracker.functions.bytes import (
+    to_uint32,
+    from_uint16,
+    from_uint32,
+    from_uint64,
+)
 
 log = Logger(namespace="coreproject_tracker")
+CONNECTION_ID = (0x417 << 32) | 0x27101980
 
 
 class Actions(enum.IntEnum):
@@ -24,36 +30,6 @@ EVENTS = {
     3: "stopped",
     4: "paused",
 }
-
-
-def to_uint32(value: int) -> bytes:
-    """Convert an integer to a 4-byte unsigned integer in network byte order."""
-    return struct.pack(">I", value)
-
-
-def from_uint64(buf):
-    """
-    Convert an 8-byte buffer into an unsigned 64-bit integer.
-    """
-    # Ensure the buffer is 8 bytes long
-    if len(buf) != 8:
-        raise ValueError("Buffer must be exactly 8 bytes")
-
-    # Unpack the high and low 32-bit parts (big-endian)
-    high, low = struct.unpack(">II", buf)
-
-    # Calculate the 64-bit integer
-    TWO_PWR_32 = 2**32
-    low_unsigned = low if low >= 0 else TWO_PWR_32 + low
-    return high * TWO_PWR_32 + low_unsigned
-
-
-def from_uint32(data):
-    return struct.unpack(">I", data)[0]
-
-
-def from_uint16(data):
-    return struct.unpack(">H", data)[0]
 
 
 class UDPServer(DatagramProtocol):
