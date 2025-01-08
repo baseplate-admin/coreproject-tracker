@@ -1,14 +1,6 @@
-from autobahn.twisted.websocket import WebSocketServerProtocol
-import enum
 import json
 from coreproject_tracker.functions.convertion import binary_to_hex
-
-
-class Actions(enum.IntEnum):
-    CONNECT = 0
-    ANNOUNCE = 1
-    SCRAPE = 2
-    ERROR = 3
+from autobahn.twisted.websocket import WebSocketServerProtocol
 
 
 class WebSocketServer(WebSocketServerProtocol):
@@ -68,20 +60,17 @@ class WebSocketServer(WebSocketServerProtocol):
         return params
         # self.transport.getHost()
 
-    def onConnect(self, request):
-        print(f"Client connecting: {request.peer}")
-
-    def onOpen(self):
-        print("WebSocket connection opened")
-
     def onMessage(self, payload, isBinary):
         payload = payload.decode("utf8") if not isBinary else payload
         params = json.loads(payload)
         try:
             data = self.parse_websocket(params)
-        except ValueError:
-            pass
-        print(data)
-
-    def onClose(self, wasClean, code, reason):
-        print(f"WebSocket closed: {reason} (code: {code}, clean: {wasClean})")
+        except ValueError as e:
+            self.sendMessage(
+                json.load(
+                    {
+                        "failure reason": e,
+                    }
+                ),
+                isBinary,
+            )

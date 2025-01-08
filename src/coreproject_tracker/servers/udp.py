@@ -1,7 +1,6 @@
 from twisted.internet.protocol import DatagramProtocol
 from twisted.logger import Logger
 import struct
-import enum
 from coreproject_tracker.datastructures import DataStructure
 from coreproject_tracker.functions.ip import addrs_to_compact
 from coreproject_tracker.constants.interval import ANNOUNCE_INTERVAL
@@ -11,25 +10,10 @@ from coreproject_tracker.functions.bytes import (
     from_uint32,
     from_uint64,
 )
+from coreproject_tracker.common import ACTIONS, EVENTS
 
 log = Logger(namespace="coreproject_tracker")
 CONNECTION_ID = (0x417 << 32) | 0x27101980
-
-
-class Actions(enum.IntEnum):
-    CONNECT = 0
-    ANNOUNCE = 1
-    SCRAPE = 2
-    ERROR = 3
-
-
-EVENTS = {
-    0: "update",
-    1: "completed",
-    2: "started",
-    3: "stopped",
-    4: "paused",
-}
 
 
 class UDPServer(DatagramProtocol):
@@ -52,19 +36,19 @@ class UDPServer(DatagramProtocol):
         """
         action = params["action"]
 
-        if action == Actions.CONNECT:
+        if action == ACTIONS.CONNECT:
             packet = b"".join(
                 [
-                    to_uint32(Actions.CONNECT),
+                    to_uint32(ACTIONS.CONNECT),
                     to_uint32(params["transaction_id"]),
                     params["connection_id"],
                 ]
             )
 
-        elif action == Actions.ANNOUNCE:
+        elif action == ACTIONS.ANNOUNCE:
             packet = b"".join(
                 [
-                    to_uint32(Actions.ANNOUNCE),
+                    to_uint32(ACTIONS.ANNOUNCE),
                     to_uint32(params["transaction_id"]),
                     to_uint32(params["interval"]),
                     to_uint32(params["incomplete"]),
@@ -73,9 +57,9 @@ class UDPServer(DatagramProtocol):
                 ]
             )
 
-        elif action == Actions.SCRAPE:
+        elif action == ACTIONS.SCRAPE:
             scrape_response = [
-                to_uint32(Actions.SCRAPE),
+                to_uint32(ACTIONS.SCRAPE),
                 to_uint32(params["transaction_id"]),
             ]
 
@@ -92,10 +76,10 @@ class UDPServer(DatagramProtocol):
 
             packet = b"".join(scrape_response)
 
-        elif action == Actions.ERROR:
+        elif action == ACTIONS.ERROR:
             packet = b"".join(
                 [
-                    to_uint32(Actions.ERROR),
+                    to_uint32(ACTIONS.ERROR),
                     to_uint32(params.get("transaction_id", 0)),
                     str(params.get("failure_reason", "")).encode(),
                 ]
@@ -123,7 +107,7 @@ class UDPServer(DatagramProtocol):
             "type": "udp",
         }
 
-        if params["action"] == Actions.ANNOUNCE:
+        if params["action"] == ACTIONS.ANNOUNCE:
             params["info_hash"] = msg[16:36].hex()  # 20 bytes
             params["peer_id"] = msg[36:56].hex()  # 20 bytes
             params["downloaded"] = from_uint64(
@@ -163,7 +147,7 @@ class UDPServer(DatagramProtocol):
 
         param = self.parse_udp_packet(data, addr)
 
-        if param["action"] == Actions.ANNOUNCE:
+        if param["action"] == ACTIONS.ANNOUNCE:
             self.datastore.add_peer(
                 param["info_hash"], param["ip"], param["port"], param["left"], 3600
             )
