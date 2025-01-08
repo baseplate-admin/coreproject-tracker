@@ -105,3 +105,7 @@ class HTTPServer(Resource):
     def __init__(self):
         super().__init__()
         self.putChild(b"announce", AnnouncePage())
+        print(self.children)
+
+    def render_GET(self, request: Request) -> bytes:
+        return b"Hello world"
