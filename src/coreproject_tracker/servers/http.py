@@ -61,6 +61,9 @@ class AnnouncePage(Resource):
         }
 
     def render_GET(self, request: Request) -> bytes:
+        if request.args == {}:
+            return b"Howdy"
+
         data = self.validate_data(request)
         # If there is error in data, it should be in bytes
         if isinstance(data, bytes):
@@ -97,12 +100,8 @@ class AnnouncePage(Resource):
 
 
 class HTTPServer(Resource):
+    isLeaf = True
+
     def __init__(self):
         super().__init__()
         self.putChild(b"announce", AnnouncePage())
-
-    def render_params(self, params):
-        pass
-
-    def parse_request(self, request):
-        pass

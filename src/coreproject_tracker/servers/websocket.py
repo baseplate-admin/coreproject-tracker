@@ -1,28 +1,14 @@
-import json
-from twisted.protocols.basic import LineReceiver
-from twisted.internet import protocol
+from autobahn.twisted.websocket import WebSocketServerProtocol
 
 
-class WebSocketServer(LineReceiver):
-    def __init__(self):
-        pass
+class WebSocketServer(WebSocketServerProtocol):
+    def onConnect(self, request):
+        print(f"Client connected: {request}")
 
-    def connectionMade(self):
-        pass
+    def onMessage(self, msg, binary):
+        # Handle incoming message
+        print(f"Received message: {msg}")
+        self.sendMessage(f"Echo: {msg}".encode("utf-8"))
 
-    def connectionLost(self, reason):
-        pass
-
-    def lineReceived(self, line):
-        pass
-
-    def handle_ws_request(self, params):
-        pass
-
-    def sendResponse(self, params):
-        # Send a response back to the client (e.g., via WebSocket)
-        pass
-
-    def sendError(self, error_message):
-        # Send an error message back to the client
-        pass
+    def onClose(self, wasClean, code, reason):
+        print(f"Connection closed: {reason}")
