@@ -1,8 +1,8 @@
+import asyncio
 import sys
 
 from autobahn.twisted.websocket import WebSocketServerFactory
-from redis.asyncio import Redis
-from twisted.internet import reactor
+from twisted.internet import asyncioreactor
 from twisted.logger import globalLogPublisher, textFileLogObserver
 from twisted.web.server import Site
 
@@ -13,12 +13,30 @@ from coreproject_tracker.servers import (
 )
 from coreproject_tracker.singletons.redis import RedisConnectionManager
 
+# Fix for Windows: Use SelectorEventLoop
+if (
+    asyncio.get_event_loop_policy().__class__.__name__
+    == "WindowsProactorEventLoopPolicy"
+):
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+# Install the asyncio reactor (only once)
+try:
+    asyncioreactor.install()
+except RuntimeError:
+    pass  # Reactor already installed, no need to do it again
+
 
 def make_app(udp_port=9000, http_port=8000, websocket_port=8080):
+    # Setup logging
     console_observer = textFileLogObserver(sys.stdout)
     globalLogPublisher.addObserver(console_observer)
 
+    # Initialize Redis connection
     RedisConnectionManager.initialize()
+
+    from twisted.internet import reactor  # Import reactor after it's installed
+
     # UDP Server
     reactor.listenUDP(udp_port, UDPServer())
 

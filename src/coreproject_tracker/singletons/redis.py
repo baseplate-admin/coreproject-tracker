@@ -29,8 +29,8 @@ class RedisConnectionManager:
         return cls._redis_client
 
     @classmethod
-    def cleanup(cls):
+    async def cleanup(cls):
         """Cleanup the Redis connection"""
         if cls._redis_client is not None:
-            cls._redis_client.close()
+            await cls._redis_client.close()
             cls._redis_client = None

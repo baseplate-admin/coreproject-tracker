@@ -1,3 +1,4 @@
+import json
 from http import HTTPStatus
 
 import bencodepy
@@ -12,18 +13,18 @@ from coreproject_tracker.constants.interval import ANNOUNCE_INTERVAL
 from coreproject_tracker.datastructures import DataStructure
 from coreproject_tracker.functions.convertion import bin_to_hex
 from coreproject_tracker.functions.ip import is_valid_ip
-from coreproject_tracker.protocols.redis import BaseRedisProtocol
+from coreproject_tracker.singletons.redis import RedisConnectionManager
 
 log = Logger(namespace="coreproject_tracker")
 
 
-class AnnouncePage(Resource, BaseRedisProtocol):
+class AnnouncePage(Resource):
     isLeaf = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)  # Initialize parent class `Resource`
-        BaseRedisProtocol.__init__(self)  # Initialize `BaseRedisProtocol`
-        print(self.redis_client)
+        self.redis_client = RedisConnectionManager.get_client()
+
         self.datastore = DataStructure()
 
     def validate_data(self, request: Request) -> dict[str, str | int] | bytes:
@@ -84,59 +85,46 @@ class AnnouncePage(Resource, BaseRedisProtocol):
         if isinstance(data, bytes):
             return data
 
-        def on_peer_added(_):
-            # After storing the value, get the updated data
-            d2 = defer.ensureDeferred(self.get_value(data["info_hash"]))
-            d2.addCallback(self.handle_announce_response, data, request)
-            d2.addErrback(self.handle_announce_error, request)
-
-        d1 = defer.ensureDeferred(
-            self.store_value(
-                data["info_hash"],
+        self.redis_client.setex(
+            data["info_hash"],
+            3600,
+            json.dumps(
                 {
                     "peer_id": data["peer_id"],
                     "peer_ip": data["peer_ip"],
                     "port": data["port"],
                     "left": data["left"],
-                },
-                3600,
-            )
+                }
+            ),
         )
-        d1.addCallback(on_peer_added)
-        d1.addErrback(self.handle_announce_error, request)
 
-        d2 = defer.ensureDeferred(self.get_value(data["info_hash"]))
+        peer_count = 0
+        peers = []
+        seeders = 0
+        leechers = 0
 
-        def handle_response(result):
-            peer_count = 0
-            peers = []
-            seeders = 0
-            leechers = 0
+        redis_data = json.loads(self.redis_client.get(data["info_hash"]))
+        print(type(redis_data))
+        for peer in redis_data:
+            if peer_count > data["numwant"]:
+                break
 
-            for peer in result:
-                if peer_count > data["numwant"]:
-                    break
+            if peer["left"] == 0:
+                seeders += 1
+            else:
+                leechers += 1
 
-                if peer.left == 0:
-                    seeders += 1
-                else:
-                    leechers += 1
+            peers.append({"ip": peer["peer_ip"], "port": peer["port"]})
+            peer_count += 1
 
-                peers.append({"ip": peer.peer_ip, "port": peer.port})
-                peer_count += 1
+        output = {
+            "peers": peers,
+            "min interval": ANNOUNCE_INTERVAL,
+            "complete": seeders,
+            "incomplete": leechers,
+        }
 
-            output = {
-                "peers": peers,
-                "min interval": ANNOUNCE_INTERVAL,
-                "complete": seeders,
-                "incomplete": leechers,
-            }
-
-            return bencodepy.bencode(output)
-
-        d2.addCallback(handle_response)
-        request.notifyFinish().addErrback(lambda _: None)
-        return server.NOT_DONE_YET
+        return bencodepy.bencode(output)
 
 
 class HTTPServer(Resource):
