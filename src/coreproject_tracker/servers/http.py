@@ -7,6 +7,7 @@ from coreproject_tracker.functions.ip import is_valid_ip
 from coreproject_tracker.datastructures import DataStructure
 import bencodepy
 from coreproject_tracker.constants.interval import ANNOUNCE_INTERVAL
+import inspect
 
 log = Logger(namespace="coreproject_tracker")
 
@@ -61,6 +62,15 @@ class AnnouncePage(Resource):
         }
 
     def render_GET(self, request: Request) -> bytes:
+        stack = inspect.stack()
+        for frame in stack:
+            print(
+                f"Function: {frame.function}, Line: {frame.lineno}, File: {frame.filename}"
+            )
+
+        if request.args == {}:
+            return b"Howdy"
+
         data = self.validate_data(request)
         # If there is error in data, it should be in bytes
         if isinstance(data, bytes):
@@ -100,9 +110,4 @@ class HTTPServer(Resource):
     def __init__(self):
         super().__init__()
         self.putChild(b"announce", AnnouncePage())
-
-    def render_params(self, params):
-        pass
-
-    def parse_request(self, request):
-        pass
+        print(self.children)
