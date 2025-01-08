@@ -6,6 +6,7 @@ from twisted.web.server import Request
 from coreproject_tracker.functions.ip import is_valid_ip
 from coreproject_tracker.datastructures import DataStructure
 import bencodepy
+from coreproject_tracker.constants.interval import ANNOUNCE_INTERVAL
 
 log = Logger(namespace="coreproject_tracker")
 
@@ -88,7 +89,7 @@ class AnnouncePage(Resource):
 
         output = {
             "peers": peers,
-            "min interval": 60,
+            "min interval": ANNOUNCE_INTERVAL,
             "complete": seeders,
             "incomplete": leechers,
         }
