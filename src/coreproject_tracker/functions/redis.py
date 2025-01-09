@@ -1,7 +1,7 @@
 import json
 import time
 
-from coreproject_tracker.singletons.redis import RedisConnectionManager
+from coreproject_tracker.singletons import RedisConnectionManager
 
 
 def hset_with_ttl(hash_key, field, value, ttl_seconds):
