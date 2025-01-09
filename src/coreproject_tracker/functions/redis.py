@@ -30,4 +30,8 @@ def hget_all_with_ttl(hash_key):
             # Optionally delete expired field
             r.hdel(hash_key, field)
 
-    return valid_fields if valid_fields else None
+    if not valid_fields:
+        r.delete(hash_key)
+        return None
+
+    return valid_fields
