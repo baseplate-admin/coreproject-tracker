@@ -115,13 +115,14 @@ class AnnouncePage(Resource):
             peers.append({"ip": peer_data["peer_ip"], "port": peer_data["port"]})
             peer_count += 1
 
-        output = {
-            "peers": peers,
-            "min interval": ANNOUNCE_INTERVAL,
-            "complete": seeders,
-            "incomplete": leechers,
-        }
-        return bencodepy.bencode(output)
+        return bencodepy.bencode(
+            {
+                "peers": peers,
+                "min interval": ANNOUNCE_INTERVAL,
+                "complete": seeders,
+                "incomplete": leechers,
+            }
+        )
 
 
 class HTTPServer(Resource):

@@ -1,26 +1,28 @@
+import json
 import struct
 
 from twisted.internet.protocol import DatagramProtocol
 from twisted.logger import Logger
 
 from coreproject_tracker.common import ACTIONS, EVENTS
-from coreproject_tracker.constants.interval import ANNOUNCE_INTERVAL
-from coreproject_tracker.datastructures import DataStructure
+from coreproject_tracker.constants import ANNOUNCE_INTERVAL, PEER_TTL
 from coreproject_tracker.functions import (
+    addrs_to_compact,
     from_uint16,
     from_uint32,
     from_uint64,
+    hget_all_with_ttl,
+    hset_with_ttl,
     to_uint32,
 )
-from coreproject_tracker.functions.ip import addrs_to_compact
 
 log = Logger(namespace="coreproject_tracker")
 CONNECTION_ID = (0x417 << 32) | 0x27101980
 
 
 class UDPServer(DatagramProtocol):
-    def __init__(self, *args, **kwargs):
-        self.datastore = DataStructure()
+    def __init__(self):
+        super().__init__()
 
     def make_udp_packet(self, params: dict[str, int | bytes | dict]) -> bytes:
         """
@@ -150,29 +152,40 @@ class UDPServer(DatagramProtocol):
         param = self.parse_udp_packet(data, addr)
 
         if param["action"] == ACTIONS.ANNOUNCE:
-            self.datastore.add_peer(
-                param["peer_id"],
-                param["info_hash"],
-                param["ip"],
-                param["port"],
-                param["left"],
-                3600,
+            hset_with_ttl(
+                data["info_hash"],
+                data["peer_id"],
+                json.dumps(
+                    {
+                        "peer_id": data["peer_id"],
+                        "info_hash": data["info_hash"],
+                        "peer_ip": data["peer_ip"],
+                        "port": data["port"],
+                        "left": data["left"],
+                    }
+                ),
+                PEER_TTL,
             )
 
             peer_count = 0
             peers = []
             seeders = 0
             leechers = 0
-            for peer in self.datastore.get_peers(param["info_hash"]):
+
+            redis_data = hget_all_with_ttl(data["info_hash"])
+            peers_list = redis_data.values()
+
+            for peer in peers_list:
                 if peer_count > param["numwant"]:
                     break
+                peer_data = json.loads(peer)
 
-                if peer.left == 0:
+                if peer_data["left"] == 0:
                     seeders += 1
                 else:
                     leechers += 1
 
-                peers.append(f"{peer.peer_ip}:{peer.port}")
+                peers.append(f"{peer_data['peer_ip']}:{peer_data['port']}")
                 peer_count += 1
 
             param["peers"] = addrs_to_compact(peers)

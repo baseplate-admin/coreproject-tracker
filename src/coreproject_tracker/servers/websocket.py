@@ -2,12 +2,11 @@ import json
 import time
 import weakref
 from threading import Lock
-from typing import Optional
 
 from autobahn.twisted.websocket import WebSocketServerProtocol
 
 from coreproject_tracker.datastructures import DataStructure
-from coreproject_tracker.functions.convertion import bin_to_hex, hex_to_bin
+from coreproject_tracker.functions import bin_to_hex, hex_to_bin
 
 
 class ConnectionManager:
@@ -34,7 +33,7 @@ class ConnectionManager:
             if identifier in self._connections:
                 del self._connections[identifier]
 
-    def get_connection(self, identifier: str) -> Optional[WebSocketServerProtocol]:
+    def get_connection(self, identifier: str) -> WebSocketServerProtocol | None:
         """
         Retrieve a connection by its identifier
         Updates the last activity timestamp when connection is accessed
