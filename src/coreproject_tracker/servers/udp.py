@@ -5,7 +5,7 @@ from twisted.internet.protocol import DatagramProtocol
 from twisted.logger import Logger
 
 from coreproject_tracker.common import ACTIONS, EVENTS
-from coreproject_tracker.constants import ANNOUNCE_INTERVAL, PEER_TTL
+from coreproject_tracker.constants import ANNOUNCE_INTERVAL, CONNECTION_ID, PEER_TTL
 from coreproject_tracker.functions import (
     addrs_to_compact,
     from_uint16,
@@ -17,7 +17,6 @@ from coreproject_tracker.functions import (
 )
 
 log = Logger(namespace="coreproject_tracker")
-CONNECTION_ID = (0x417 << 32) | 0x27101980
 
 
 class UDPServer(DatagramProtocol):
