@@ -1,2 +1,4 @@
-PEER_TTL = 3600  # seconds
-CONNECTION_TTL = 5 * 60
+from datetime import timedelta
+
+PEER_TTL = timedelta(hours=1).total_seconds()
+CONNECTION_TTL = timedelta(minutes=5).total_seconds()
