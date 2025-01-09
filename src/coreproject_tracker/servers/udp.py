@@ -5,7 +5,13 @@ from twisted.internet.protocol import DatagramProtocol
 from twisted.logger import Logger
 
 from coreproject_tracker.common import ACTIONS, EVENTS
-from coreproject_tracker.constants import ANNOUNCE_INTERVAL, CONNECTION_ID, PEER_TTL
+from coreproject_tracker.constants import (
+    ANNOUNCE_INTERVAL,
+    CONNECTION_ID,
+    DEFAULT_ANNOUNCE_PEERS,
+    MAX_ANNOUNCE_PEERS,
+    PEER_TTL,
+)
 from coreproject_tracker.functions import (
     addrs_to_compact,
     from_uint16,
@@ -130,7 +136,9 @@ class UDPServer(DatagramProtocol):
             params["ip"] = from_uint32(msg[84:88]) or addr[0]
             params["key"] = from_uint32(msg[88:92])
 
-            params["numwant"] = from_uint32(msg[92:96]) or 50  # Default announce peer
+            params["numwant"] = min(
+                from_uint32(msg[92:96]) or DEFAULT_ANNOUNCE_PEERS, MAX_ANNOUNCE_PEERS
+            )
             params["port"] = from_uint16(msg[96:98]) or addr[1]
             params["addr"] = f"{params['ip']}:{params['port']}"
             params["compact"] = 1
