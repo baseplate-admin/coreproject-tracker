@@ -10,7 +10,7 @@ from coreproject_tracker.common import DEFAULT_ANNOUNCE_PEERS, MAX_ANNOUNCE_PEER
 from coreproject_tracker.constants.interval import ANNOUNCE_INTERVAL
 from coreproject_tracker.functions.convertion import bin_to_hex
 from coreproject_tracker.functions.ip import is_valid_ip
-from coreproject_tracker.functions.redis import list_with_ttl_add, list_with_ttl_get
+from coreproject_tracker.functions.redis import hget_all_with_ttl, hset_with_ttl
 
 log = Logger(namespace="coreproject_tracker")
 
@@ -75,8 +75,9 @@ class AnnouncePage(Resource):
             request.setResponseCode(HTTPStatus.BAD_REQUEST)
             return bencodepy.bencode({"failure reason": e})
 
-        list_with_ttl_add(
+        hset_with_ttl(
             data["info_hash"],
+            data["peer_id"],
             json.dumps(
                 {
                     "peer_id": data["peer_id"],
@@ -94,8 +95,10 @@ class AnnouncePage(Resource):
         seeders = 0
         leechers = 0
 
-        redis_data = list_with_ttl_get(data["info_hash"])
-        for peer in redis_data:
+        redis_data = hget_all_with_ttl(data["info_hash"])
+        peers_list = redis_data.values()
+
+        for peer in peers_list:
             if peer_count > data["numwant"]:
                 break
 

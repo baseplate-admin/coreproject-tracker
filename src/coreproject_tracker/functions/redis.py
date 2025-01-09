@@ -1,41 +1,33 @@
+import json
 import time
 
 from coreproject_tracker.singletons.redis import RedisConnectionManager
 
 
-def list_with_ttl_add(list_key, item, ttl_seconds):
-    """
-    Add an item to the list with a TTL at the application level.
-    TTL is managed using a sorted set where the expiration time is stored as the score.
-    """
+def hset_with_ttl(hash_key, field, value, ttl_seconds):
     r = RedisConnectionManager.get_client()
-    # Calculate expiration time (current time + TTL)
-    expiration_time = time.time() + ttl_seconds
-    # Add item to list (this can be done with LPUSH, RPUSH, etc.)
-    r.rpush(list_key, item)
-    # Store the expiration time in a sorted set to track each item’s TTL
-    r.zadd(f"{list_key}:ttl", {item: expiration_time})
+
+    expiration = time.time() + ttl_seconds
+    r.hset(hash_key, field, json.dumps({"value": value, "expires_at": expiration}))
 
 
-def list_with_ttl_get(list_key):
-    """
-    Retrieve non-expired items from the list and remove expired items.
-    """
+def hget_all_with_ttl(hash_key):
     r = RedisConnectionManager.get_client()
-    current_time = time.time()
-    # Retrieve all items from the list
-    items = r.lrange(list_key, 0, -1)
-    valid_items = []
 
-    # Check expiration for each item in the list using the sorted set
-    for item in items:
-        expiration_time = r.zscore(f"{list_key}:ttl", item)
+    # Retrieve all fields and their values from the hash
+    data = r.hgetall(hash_key)
+    if not data:
+        return None  # Return None if the hash doesn't exist or is empty
 
-        if expiration_time and expiration_time > current_time:
-            valid_items.append(item)
+    valid_fields = {}
+
+    # Iterate over each field-value pair in the hash
+    for field, value in data.items():
+        record = json.loads(value)  # Decode bytes and parse JSON
+        if time.time() < record["expires_at"]:  # Check if the field has expired
+            valid_fields[field] = record["value"]  # Add valid field to result
         else:
-            # Remove expired item from the list and TTL tracking sorted set
-            r.lrem(list_key, 0, item)  # Remove item from the list
-            r.zrem(f"{list_key}:ttl", item)  # Remove item from the sorted set
+            # Optionally delete expired field
+            r.hdel(hash_key, field)
 
-    return valid_items
+    return valid_fields if valid_fields else None
