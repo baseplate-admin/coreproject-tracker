@@ -1,10 +1,7 @@
-import json
 from http import HTTPStatus
 
 import bencodepy
-from twisted.internet import defer
 from twisted.logger import Logger
-from twisted.web import server
 from twisted.web.resource import Resource
 from twisted.web.server import Request
 
@@ -13,8 +10,6 @@ from coreproject_tracker.constants.interval import ANNOUNCE_INTERVAL
 from coreproject_tracker.datastructures import DataStructure
 from coreproject_tracker.functions.convertion import bin_to_hex
 from coreproject_tracker.functions.ip import is_valid_ip
-from coreproject_tracker.singletons.redis import RedisConnectionManager
-from coreproject_tracker.functions.redis import hget_with_ttl, hset_with_ttl
 
 log = Logger(namespace="coreproject_tracker")
 
@@ -23,9 +18,7 @@ class AnnouncePage(Resource):
     isLeaf = True
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)  # Initialize parent class `Resource`
-        self.redis_client = RedisConnectionManager.get_client()
-
+        super().__init__(*args, **kwargs)
         self.datastore = DataStructure()
 
     def validate_data(self, request: Request) -> dict[str, str | int] | bytes:
@@ -82,25 +75,30 @@ class AnnouncePage(Resource):
             request.setResponseCode(HTTPStatus.BAD_REQUEST)
             return bencodepy.bencode({"failure reason": e})
 
-        pass
+        self.datastore.add_peer(
+            data["peer_id"],
+            data["info_hash"],
+            data["peer_ip"],
+            data["port"],
+            data["left"],
+            3600,
+        )
 
         peer_count = 0
         peers = []
         seeders = 0
         leechers = 0
 
-        redis_data = json.loads(self.redis_client.get(data["info_hash"]))
-        print(type(redis_data))
-        for peer in redis_data:
+        for peer in self.datastore.get_peers(data["info_hash"]):
             if peer_count > data["numwant"]:
                 break
 
-            if peer["left"] == 0:
+            if peer.left == 0:
                 seeders += 1
             else:
                 leechers += 1
 
-            peers.append({"ip": peer["peer_ip"], "port": peer["port"]})
+            peers.append({"ip": peer.peer_ip, "port": peer.port})
             peer_count += 1
 
         output = {
@@ -109,7 +107,6 @@ class AnnouncePage(Resource):
             "complete": seeders,
             "incomplete": leechers,
         }
-
         return bencodepy.bencode(output)
 
 
