@@ -1,7 +1,6 @@
 import ipaddress
 import struct
-
-__all__ = ["is_valid_ip"]
+from typing import Literal
 
 
 def is_valid_ip(ip: str):
@@ -39,3 +38,14 @@ def addrs_to_compact(addrs):
         compact.extend(ip_bytes + port_bytes)
 
     return bytes(compact)
+
+
+def check_ip_type(address) -> Literal["IPv4"] | Literal["IPv6"]:
+    try:
+        ip = ipaddress.ip_address(address)
+        if isinstance(ip, ipaddress.IPv4Address):
+            return "IPv4"
+        elif isinstance(ip, ipaddress.IPv6Address):
+            return "IPv6"
+    except ValueError:
+        return "Invalid IP address"
