@@ -7,10 +7,13 @@ from twisted.web.resource import Resource
 from twisted.web.server import Request
 
 from coreproject_tracker.common import DEFAULT_ANNOUNCE_PEERS, MAX_ANNOUNCE_PEERS
-from coreproject_tracker.constants.interval import ANNOUNCE_INTERVAL
-from coreproject_tracker.functions.convertion import bin_to_hex
-from coreproject_tracker.functions.ip import is_valid_ip
-from coreproject_tracker.functions.redis import hget_all_with_ttl, hset_with_ttl
+from coreproject_tracker.constants import ANNOUNCE_INTERVAL, PEER_TTL
+from coreproject_tracker.functions import (
+    bin_to_hex,
+    hget_all_with_ttl,
+    hset_with_ttl,
+    is_valid_ip,
+)
 
 log = Logger(namespace="coreproject_tracker")
 
@@ -87,7 +90,7 @@ class AnnouncePage(Resource):
                     "left": data["left"],
                 }
             ),
-            3600,
+            PEER_TTL,
         )
 
         peer_count = 0

@@ -6,7 +6,7 @@ from twisted.logger import Logger
 from coreproject_tracker.common import ACTIONS, EVENTS
 from coreproject_tracker.constants.interval import ANNOUNCE_INTERVAL
 from coreproject_tracker.datastructures import DataStructure
-from coreproject_tracker.functions.bytes import (
+from coreproject_tracker.functions import (
     from_uint16,
     from_uint32,
     from_uint64,
