@@ -1,3 +1,4 @@
+import json
 from http import HTTPStatus
 
 import bencodepy
@@ -7,9 +8,9 @@ from twisted.web.server import Request
 
 from coreproject_tracker.common import DEFAULT_ANNOUNCE_PEERS, MAX_ANNOUNCE_PEERS
 from coreproject_tracker.constants.interval import ANNOUNCE_INTERVAL
-from coreproject_tracker.datastructures import DataStructure
 from coreproject_tracker.functions.convertion import bin_to_hex
 from coreproject_tracker.functions.ip import is_valid_ip
+from coreproject_tracker.functions.redis import list_with_ttl_add, list_with_ttl_get
 
 log = Logger(namespace="coreproject_tracker")
 
@@ -19,7 +20,6 @@ class AnnouncePage(Resource):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.datastore = DataStructure()
 
     def validate_data(self, request: Request) -> dict[str, str | int] | bytes:
         params = {}
@@ -75,12 +75,17 @@ class AnnouncePage(Resource):
             request.setResponseCode(HTTPStatus.BAD_REQUEST)
             return bencodepy.bencode({"failure reason": e})
 
-        self.datastore.add_peer(
-            data["peer_id"],
+        list_with_ttl_add(
             data["info_hash"],
-            data["peer_ip"],
-            data["port"],
-            data["left"],
+            json.dumps(
+                {
+                    "peer_id": data["peer_id"],
+                    "info_hash": data["info_hash"],
+                    "peer_ip": data["peer_ip"],
+                    "port": data["port"],
+                    "left": data["left"],
+                }
+            ),
             3600,
         )
 
@@ -89,16 +94,19 @@ class AnnouncePage(Resource):
         seeders = 0
         leechers = 0
 
-        for peer in self.datastore.get_peers(data["info_hash"]):
+        redis_data = list_with_ttl_get(data["info_hash"])
+        for peer in redis_data:
             if peer_count > data["numwant"]:
                 break
 
-            if peer.left == 0:
+            peer_data = json.loads(peer)
+
+            if peer_data["left"] == 0:
                 seeders += 1
             else:
                 leechers += 1
 
-            peers.append({"ip": peer.peer_ip, "port": peer.port})
+            peers.append({"ip": peer_data["peer_ip"], "port": peer_data["port"]})
             peer_count += 1
 
         output = {
