@@ -2,19 +2,29 @@ import json
 import time
 import weakref
 from threading import Lock
-from typing import Optional
 
 from autobahn.twisted.websocket import WebSocketServerProtocol
 
+from coreproject_tracker.constants import (
+    CONNECTION_TTL,
+    MAX_ANNOUNCE_PEERS,
+    PEER_TTL,
+    WEBSOCKET_INTERVAL,
+)
 from coreproject_tracker.datastructures import DataStructure
-from coreproject_tracker.functions.convertion import bin_to_hex, hex_to_bin
+from coreproject_tracker.functions import (
+    bin_to_hex,
+    hex_to_bin,
+    hget_all_with_ttl,
+    hset_with_ttl,
+)
 
 
 class ConnectionManager:
-    def __init__(self, inactive_timeout: int = 300):  # 5 minutes default timeout
+    def __init__(self):
         # Store connections and their last activity time
         self._connections: dict[str, (weakref.ref, float)] = {}
-        self._inactive_timeout = inactive_timeout
+        self._inactive_timeout = CONNECTION_TTL
         self._lock = Lock()
 
     def add_connection(
@@ -34,7 +44,7 @@ class ConnectionManager:
             if identifier in self._connections:
                 del self._connections[identifier]
 
-    def get_connection(self, identifier: str) -> Optional[WebSocketServerProtocol]:
+    def get_connection(self, identifier: str) -> WebSocketServerProtocol | None:
         """
         Retrieve a connection by its identifier
         Updates the last activity timestamp when connection is accessed
@@ -127,7 +137,7 @@ class WebSocketServer(WebSocketServerProtocol):
             if offers := params.get("offers"):
                 params["numwant"] = len(offers)
             else:
-                params["numwant"] = 50  # MAX_ANNOUNCE_PEERS
+                params["numwant"] = MAX_ANNOUNCE_PEERS
             params["compact"] = -1
 
         client_ip = self.transport.getPeer().host
@@ -137,7 +147,6 @@ class WebSocketServer(WebSocketServerProtocol):
         params["port"] = client_port
         params["addr"] = f"{client_ip}:{client_port}"
         return params
-        # self.transport.getHost()
 
     def onMessage(self, payload, isBinary):
         payload = payload.decode("utf8") if not isBinary else payload
@@ -156,20 +165,29 @@ class WebSocketServer(WebSocketServerProtocol):
 
         response = {}
         response["action"] = data["action"]
-        self.datastore.add_peer(
-            data["peer_id"],
+        hset_with_ttl(
             data["info_hash"],
-            data["ip"],
-            data["port"],
-            data["left"],
-            3600,
+            data["peer_id"],
+            json.dumps(
+                {
+                    "peer_id": data["peer_id"],
+                    "info_hash": data["info_hash"],
+                    "peer_ip": data["peer_ip"],
+                    "port": data["port"],
+                    "left": data["left"],
+                }
+            ),
+            PEER_TTL,
         )
 
         seeders = 0
         leechers = 0
-        peers = self.datastore.get_peers(data["info_hash"])
-        for peer in peers:
-            if peer.left == 0:
+
+        redis_data = hget_all_with_ttl(data["info_hash"])
+        peers_list = [json.loads(peer) for peer in redis_data.values()]
+
+        for peer in peers_list:
+            if peer["left"] == 0:
                 seeders += 1
             else:
                 leechers += 1
@@ -179,7 +197,7 @@ class WebSocketServer(WebSocketServerProtocol):
 
         if response["action"] == "announce":
             response["info_hash"] = hex_to_bin(params["info_hash"])
-            response["interval"] = 60 * 2
+            response["interval"] = WEBSOCKET_INTERVAL
             self.sendMessage(json.dumps(response).encode(), isBinary)
 
         if not params.get("answer"):
@@ -188,8 +206,8 @@ class WebSocketServer(WebSocketServerProtocol):
         self.connection_manager.add_connection(data["peer_id"], self)
 
         if (offers := params.get("offers")) and isinstance(offers, list):
-            for index, peer in enumerate(peers):
-                peer_instance = self.connection_manager.get_connection(peer.peer_id)
+            for index, peer in enumerate(peers_list):
+                peer_instance = self.connection_manager.get_connection(peer["peer_id"])
                 peer_instance.sendMessage(
                     json.dumps(
                         {
@@ -207,9 +225,7 @@ class WebSocketServer(WebSocketServerProtocol):
                 bin_to_hex(data["to_peer_id"])
             )
 
-            if not to_peer:
-                print("No `to_peer` found")
-            else:
+            if to_peer:
                 to_peer.sendMessage(
                     json.dumps(
                         {
