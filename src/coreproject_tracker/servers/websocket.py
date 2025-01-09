@@ -5,7 +5,12 @@ from threading import Lock
 
 from autobahn.twisted.websocket import WebSocketServerProtocol
 
-from coreproject_tracker.constants import PEER_TTL
+from coreproject_tracker.constants import (
+    CONNECTION_TTL,
+    MAX_ANNOUNCE_PEERS,
+    PEER_TTL,
+    WEBSOCKET_INTERVAL,
+)
 from coreproject_tracker.datastructures import DataStructure
 from coreproject_tracker.functions import (
     bin_to_hex,
@@ -16,10 +21,10 @@ from coreproject_tracker.functions import (
 
 
 class ConnectionManager:
-    def __init__(self, inactive_timeout: int = 300):  # 5 minutes default timeout
+    def __init__(self):
         # Store connections and their last activity time
         self._connections: dict[str, (weakref.ref, float)] = {}
-        self._inactive_timeout = inactive_timeout
+        self._inactive_timeout = CONNECTION_TTL
         self._lock = Lock()
 
     def add_connection(
@@ -132,7 +137,7 @@ class WebSocketServer(WebSocketServerProtocol):
             if offers := params.get("offers"):
                 params["numwant"] = len(offers)
             else:
-                params["numwant"] = 50  # MAX_ANNOUNCE_PEERS
+                params["numwant"] = MAX_ANNOUNCE_PEERS
             params["compact"] = -1
 
         client_ip = self.transport.getPeer().host
@@ -142,7 +147,6 @@ class WebSocketServer(WebSocketServerProtocol):
         params["port"] = client_port
         params["addr"] = f"{client_ip}:{client_port}"
         return params
-        # self.transport.getHost()
 
     def onMessage(self, payload, isBinary):
         payload = payload.decode("utf8") if not isBinary else payload
@@ -193,7 +197,7 @@ class WebSocketServer(WebSocketServerProtocol):
 
         if response["action"] == "announce":
             response["info_hash"] = hex_to_bin(params["info_hash"])
-            response["interval"] = 60 * 2
+            response["interval"] = WEBSOCKET_INTERVAL
             self.sendMessage(json.dumps(response).encode(), isBinary)
 
         if not params.get("answer"):
@@ -221,9 +225,7 @@ class WebSocketServer(WebSocketServerProtocol):
                 bin_to_hex(data["to_peer_id"])
             )
 
-            if not to_peer:
-                print("No `to_peer` found")
-            else:
+            if to_peer:
                 to_peer.sendMessage(
                     json.dumps(
                         {

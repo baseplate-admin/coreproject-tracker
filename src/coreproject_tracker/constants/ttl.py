@@ -1,1 +1,2 @@
 PEER_TTL = 3600  # seconds
+CONNECTION_TTL = 5 * 60
