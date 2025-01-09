@@ -14,8 +14,8 @@ from coreproject_tracker.constants import (
 )
 from coreproject_tracker.functions import (
     bin_to_hex,
-    hget_all_with_ttl,
     check_ip_type,
+    hget_all_with_ttl,
     hset_with_ttl,
     is_valid_ip,
 )
