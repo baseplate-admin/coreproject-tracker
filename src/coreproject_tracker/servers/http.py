@@ -6,8 +6,12 @@ from twisted.logger import Logger
 from twisted.web.resource import Resource
 from twisted.web.server import Request
 
-from coreproject_tracker.common import DEFAULT_ANNOUNCE_PEERS, MAX_ANNOUNCE_PEERS
-from coreproject_tracker.constants import ANNOUNCE_INTERVAL, PEER_TTL
+from coreproject_tracker.constants import (
+    ANNOUNCE_INTERVAL,
+    DEFAULT_ANNOUNCE_PEERS,
+    MAX_ANNOUNCE_PEERS,
+    PEER_TTL,
+)
 from coreproject_tracker.functions import (
     bin_to_hex,
     hget_all_with_ttl,
