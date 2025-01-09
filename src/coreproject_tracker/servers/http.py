@@ -14,6 +14,7 @@ from coreproject_tracker.datastructures import DataStructure
 from coreproject_tracker.functions.convertion import bin_to_hex
 from coreproject_tracker.functions.ip import is_valid_ip
 from coreproject_tracker.singletons.redis import RedisConnectionManager
+from coreproject_tracker.functions.redis import hget_with_ttl, hset_with_ttl
 
 log = Logger(namespace="coreproject_tracker")
 
@@ -81,22 +82,7 @@ class AnnouncePage(Resource):
             request.setResponseCode(HTTPStatus.BAD_REQUEST)
             return bencodepy.bencode({"failure reason": e})
 
-        # If there is error in data, it should be in bytes
-        if isinstance(data, bytes):
-            return data
-
-        self.redis_client.setex(
-            data["info_hash"],
-            3600,
-            json.dumps(
-                {
-                    "peer_id": data["peer_id"],
-                    "peer_ip": data["peer_ip"],
-                    "port": data["port"],
-                    "left": data["left"],
-                }
-            ),
-        )
+        pass
 
         peer_count = 0
         peers = []
