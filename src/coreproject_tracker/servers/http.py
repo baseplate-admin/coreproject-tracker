@@ -11,6 +11,7 @@ from coreproject_tracker.constants import ANNOUNCE_INTERVAL, PEER_TTL
 from coreproject_tracker.functions import (
     bin_to_hex,
     hget_all_with_ttl,
+    check_ip_type,
     hset_with_ttl,
     is_valid_ip,
 )
@@ -95,6 +96,7 @@ class AnnouncePage(Resource):
 
         peer_count = 0
         peers = []
+        peers6 = []
         seeders = 0
         leechers = 0
 
@@ -112,12 +114,20 @@ class AnnouncePage(Resource):
             else:
                 leechers += 1
 
-            peers.append({"ip": peer_data["peer_ip"], "port": peer_data["port"]})
+            peer_ip = peer_data["peer_ip"]
+            if check_ip_type(peer_ip) == "IPv4":
+                peers.append({"ip": peer_data["peer_ip"], "port": peer_data["port"]})
+            elif check_ip_type(peer_ip) == "IPv6":
+                peers6.append({"ip": peer_data["peer_ip"], "port": peer_data["port"]})
+            else:
+                raise TypeError("`peer_ip` is not 'ipv4' nor 'ipv6'")
+
             peer_count += 1
 
         return bencodepy.bencode(
             {
                 "peers": peers,
+                "peers6": peers6,
                 "min interval": ANNOUNCE_INTERVAL,
                 "complete": seeders,
                 "incomplete": leechers,
