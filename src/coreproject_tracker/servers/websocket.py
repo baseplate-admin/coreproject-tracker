@@ -5,8 +5,14 @@ from threading import Lock
 
 from autobahn.twisted.websocket import WebSocketServerProtocol
 
+from coreproject_tracker.constants import PEER_TTL
 from coreproject_tracker.datastructures import DataStructure
-from coreproject_tracker.functions import bin_to_hex, hex_to_bin
+from coreproject_tracker.functions import (
+    bin_to_hex,
+    hex_to_bin,
+    hget_all_with_ttl,
+    hset_with_ttl,
+)
 
 
 class ConnectionManager:
@@ -155,20 +161,29 @@ class WebSocketServer(WebSocketServerProtocol):
 
         response = {}
         response["action"] = data["action"]
-        self.datastore.add_peer(
-            data["peer_id"],
+        hset_with_ttl(
             data["info_hash"],
-            data["ip"],
-            data["port"],
-            data["left"],
-            3600,
+            data["peer_id"],
+            json.dumps(
+                {
+                    "peer_id": data["peer_id"],
+                    "info_hash": data["info_hash"],
+                    "peer_ip": data["peer_ip"],
+                    "port": data["port"],
+                    "left": data["left"],
+                }
+            ),
+            PEER_TTL,
         )
 
         seeders = 0
         leechers = 0
-        peers = self.datastore.get_peers(data["info_hash"])
-        for peer in peers:
-            if peer.left == 0:
+
+        redis_data = hget_all_with_ttl(data["info_hash"])
+        peers_list = [json.loads(peer) for peer in redis_data.values()]
+
+        for peer in peers_list:
+            if peer["left"] == 0:
                 seeders += 1
             else:
                 leechers += 1
@@ -187,8 +202,8 @@ class WebSocketServer(WebSocketServerProtocol):
         self.connection_manager.add_connection(data["peer_id"], self)
 
         if (offers := params.get("offers")) and isinstance(offers, list):
-            for index, peer in enumerate(peers):
-                peer_instance = self.connection_manager.get_connection(peer.peer_id)
+            for index, peer in enumerate(peers_list):
+                peer_instance = self.connection_manager.get_connection(peer["peer_id"])
                 peer_instance.sendMessage(
                     json.dumps(
                         {
