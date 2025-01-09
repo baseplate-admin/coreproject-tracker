@@ -11,7 +11,6 @@ from coreproject_tracker.constants import (
     PEER_TTL,
     WEBSOCKET_INTERVAL,
 )
-from coreproject_tracker.datastructures import DataStructure
 from coreproject_tracker.functions import (
     bin_to_hex,
     hex_to_bin,
@@ -91,7 +90,6 @@ class WebSocketServer(WebSocketServerProtocol):
 
     def __init__(self):
         super().__init__()
-        self.datastore = DataStructure()
 
     def parse_websocket(self, params={}):
         params["type"] = "ws"

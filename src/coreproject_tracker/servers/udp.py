@@ -4,11 +4,12 @@ import struct
 from twisted.internet.protocol import DatagramProtocol
 from twisted.logger import Logger
 
-from coreproject_tracker.common import ACTIONS, EVENTS
 from coreproject_tracker.constants import (
+    ACTIONS,
     ANNOUNCE_INTERVAL,
     CONNECTION_ID,
     DEFAULT_ANNOUNCE_PEERS,
+    EVENTS,
     MAX_ANNOUNCE_PEERS,
     PEER_TTL,
 )
