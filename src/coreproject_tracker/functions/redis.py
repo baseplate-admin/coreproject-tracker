@@ -1,6 +1,7 @@
 import json
 import time
 
+from coreproject_tracker.constants import HASH_EXPIRE_TIME
 from coreproject_tracker.singletons import RedisConnectionManager
 
 
@@ -9,6 +10,7 @@ def hset_with_ttl(hash_key, field, value, ttl_seconds):
 
     expiration = time.time() + ttl_seconds
     r.hset(hash_key, field, json.dumps({"value": value, "expires_at": expiration}))
+    r.expire(hash_key, HASH_EXPIRE_TIME)
 
 
 def hget_all_with_ttl(hash_key):
@@ -19,6 +21,8 @@ def hget_all_with_ttl(hash_key):
     if not data:
         return None  # Return None if the hash doesn't exist or is empty
 
+    # Update the ttl again
+    r.expire(hash_key, HASH_EXPIRE_TIME)
     valid_fields = {}
 
     # Iterate over each field-value pair in the hash

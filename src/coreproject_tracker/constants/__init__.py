@@ -12,6 +12,7 @@ from .peers import (
 from .peers import (
     MAX_ANNOUNCE_PEERS as MAX_ANNOUNCE_PEERS,
 )
+from .redis import HASH_EXPIRE_TIME as HASH_EXPIRE_TIME
 from .ttl import CONNECTION_TTL as CONNECTION_TTL
 from .ttl import PEER_TTL as PEER_TTL
 from .udp import CONNECTION_ID as CONNECTION_ID
