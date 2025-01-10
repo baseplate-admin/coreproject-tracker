@@ -55,7 +55,7 @@ class HTTPServer(resource.Resource):
 
         hset_with_ttl(
             data["info_hash"],
-            data["peer_id"],
+            f"{data['peer_ip']}:{data['port']}",
             json.dumps(
                 {
                     "peer_id": data["peer_id"],

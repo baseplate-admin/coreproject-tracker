@@ -63,7 +63,7 @@ class UDPServer(DatagramProtocol):
         if param["action"] == ACTIONS.ANNOUNCE:
             hset_with_ttl(
                 param["info_hash"],
-                param["peer_id"],
+                f"{data['ip']}:{data['port']}",
                 json.dumps(
                     {
                         "peer_id": param["peer_id"],

@@ -96,7 +96,7 @@ class WebSocketServer(WebSocketServerProtocol):
         response["action"] = data["action"]
         hset_with_ttl(
             data["info_hash"],
-            data["peer_id"],
+            data["addr"],
             json.dumps(
                 {
                     "peer_id": data["peer_id"],
