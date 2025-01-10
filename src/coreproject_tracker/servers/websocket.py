@@ -173,8 +173,9 @@ class WebSocketServer(WebSocketServerProtocol):
             except (ValueError, TypeError, KeyError):
                 params["left"] = float("inf")
 
+            offers = params.get("offers")
             params["numwant"] = min(
-                params.get("offers", DEFAULT_ANNOUNCE_PEERS),
+                len(offers) if offers else DEFAULT_ANNOUNCE_PEERS,
                 MAX_ANNOUNCE_PEERS,
             )
 

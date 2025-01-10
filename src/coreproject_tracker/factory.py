@@ -25,13 +25,11 @@ def make_app(udp_port=8000, http_port=9000, websocket_port=8080):
     # HTTP Server
     root = HTTPServer()
     http_site = Site(root)
-    reactor.listenTCP(http_port, http_site, interface="127.0.0.1")  # IPV4
-    reactor.listenTCP(http_port, http_site, interface="::")  # IPV6
+    reactor.listenTCP(http_port, http_site, interface="::")
 
     # WebSocket Server
     factory = WebSocketServerFactory()
     factory.protocol = WebSocketServer
-    reactor.listenTCP(websocket_port, factory, interface="127.0.0.1")  # IPV4
-    reactor.listenTCP(websocket_port, factory, interface="::")  # IPV6
+    reactor.listenTCP(websocket_port, factory, interface="::")
 
     return reactor
