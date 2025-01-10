@@ -14,7 +14,7 @@ from coreproject_tracker.constants import (
 )
 from coreproject_tracker.functions import (
     bin_to_hex,
-    check_ip_type_strict,
+    hex_to_bin,
     hget,
     hset,
     is_valid_ip,
@@ -88,14 +88,13 @@ class HTTPServer(resource.Resource):
             else:
                 leechers += 1
 
-            peer_ip = peer_data["peer_ip"]
-            if check_ip_type_strict(peer_ip) == "IPv4":
-                peers.append({"ip": peer_data["peer_ip"], "port": peer_data["port"]})
-            elif check_ip_type_strict(peer_ip) == "IPv6":
-                peers6.append({"ip": peer_data["peer_ip"], "port": peer_data["port"]})
-            else:
-                raise TypeError("`peer_ip` is not 'ipv4' nor 'ipv6'")
-
+            peers.append(
+                {
+                    "peer id": hex_to_bin(peer_data["peer_id"]),
+                    "ip": peer_data["peer_ip"],
+                    "port": peer_data["port"],
+                }
+            )
             peer_count += 1
 
         output = {

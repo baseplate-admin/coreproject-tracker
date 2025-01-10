@@ -23,17 +23,13 @@ from coreproject_tracker.functions import (
     hget,
     hset,
     to_uint32,
+    check_ip_type_strict,
 )
 
 log = Logger(namespace="coreproject_tracker")
 
 
 class UDPServer(DatagramProtocol):
-    def startProtocol(self):
-        # On Linux, we could set SO_REUSEPORT, but it's not available on other OSs
-        if platform.system() == "Linux":
-            self.transport.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
     def datagramReceived(self, data, addr):
         deferred = threads.deferToThread(self.__datagramReceived, data, addr)
         deferred.addCallback(self.on_task_done, addr)
@@ -62,7 +58,6 @@ class UDPServer(DatagramProtocol):
             )
 
         param = self.parse_udp_packet(data, addr)
-
         if param["action"] == ACTIONS.ANNOUNCE:
             hset(
                 param["info_hash"],
@@ -96,7 +91,9 @@ class UDPServer(DatagramProtocol):
                 else:
                     leechers += 1
 
-                peers.append(f"{peer_data['peer_ip']}:{peer_data['port']}")
+                if check_ip_type_strict(peer_data["peer_ip"]) == "IPv4":
+                    peers.append(f"{peer_data['peer_ip']}:{peer_data['port']}")
+
                 peer_count += 1
 
             param["peers"] = addrs_to_compact(peers)
@@ -153,7 +150,6 @@ class UDPServer(DatagramProtocol):
             params["port"] = from_uint16(msg[96:98]) or addr[1]
             params["addr"] = f"{params['ip']}:{params['port']}"
 
-            params["compact"] = 1
         return params
 
     def make_udp_packet(self, params: dict[str, int | bytes | dict]) -> bytes:
