@@ -84,6 +84,8 @@ class WebSocketServer(WebSocketServerProtocol):
         if (offers := params.get("offers")) and isinstance(offers, list):
             for key, peer in redis_data.items():
                 try:
+                    peer = json.loads(peer)
+
                     for offer in offers:
                         # Peer doesn't exist in connection manager raises AttributeError
                         with contextlib.suppress(AttributeError):
@@ -102,6 +104,8 @@ class WebSocketServer(WebSocketServerProtocol):
                                 ).encode(),
                                 isBinary,
                             )
+
+                # Cleanup stale peers
                 except Disconnected:
                     hdel(data["info_hash"], key)
 
