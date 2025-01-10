@@ -22,10 +22,11 @@ from .ip import check_ip_type_strict as check_ip_type_strict
 from .ip import (
     is_valid_ip as is_valid_ip,
 )
+from .redis import hdel as hdel
 from .redis import (
-    hget_all_with_ttl as hget_all_with_ttl,
+    hget as hget,
 )
 from .redis import (
-    hset_with_ttl as hset_with_ttl,
+    hset as hset,
 )
 from .version import compare_versions as compare_versions

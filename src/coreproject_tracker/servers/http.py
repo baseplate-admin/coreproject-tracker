@@ -15,8 +15,8 @@ from coreproject_tracker.constants import (
 from coreproject_tracker.functions import (
     bin_to_hex,
     check_ip_type_strict,
-    hget_all_with_ttl,
-    hset_with_ttl,
+    hget,
+    hset,
     is_valid_ip,
 )
 
@@ -54,7 +54,7 @@ class HTTPServer(resource.Resource):
             request.setResponseCode(HTTPStatus.BAD_REQUEST)
             return bencodepy.bencode({"failure reason": e})
 
-        hset_with_ttl(
+        hset(
             data["info_hash"],
             f"{data['peer_ip']}:{data['port']}",
             json.dumps(
@@ -74,7 +74,7 @@ class HTTPServer(resource.Resource):
         seeders = 0
         leechers = 0
 
-        redis_data = hget_all_with_ttl(data["info_hash"])
+        redis_data = hget(data["info_hash"])
         peers_list = redis_data.values()
 
         for peer in peers_list:
