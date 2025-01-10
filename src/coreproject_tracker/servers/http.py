@@ -24,9 +24,7 @@ from coreproject_tracker.functions import (
 log = Logger(namespace="coreproject_tracker")
 
 
-class AnnouncePage(resource.Resource):
-    isLeaf = True
-
+class HTTPServer(resource.Resource):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -151,9 +149,3 @@ class AnnouncePage(resource.Resource):
         params["peer_id"] = bin_to_hex(peer_id)
 
         return params
-
-
-class HTTPServer(resource.Resource):
-    def __init__(self):
-        super().__init__()
-        self.putChild(b"announce", AnnouncePage())
