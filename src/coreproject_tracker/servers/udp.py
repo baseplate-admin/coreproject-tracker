@@ -18,7 +18,8 @@ from coreproject_tracker.constants import (
 )
 from coreproject_tracker.functions import (
     addrs_to_compact,
-    check_ip_type,
+    check_ip_type_strict,
+    check_ip_type_string,
     from_uint16,
     from_uint32,
     from_uint64,
@@ -66,14 +67,19 @@ class UDPServer(DatagramProtocol):
         param = self.parse_udp_packet(data, addr)
 
         if param["action"] == ACTIONS.ANNOUNCE:
+            if check_ip_type_strict(param["ip"]) == "IPv4":
+                peer_ip = param["ip"]
+            elif check_ip_type_strict(param["ip"]) == "IPv6":
+                peer_ip = f"[{param['ip']}]"
+
             hset_with_ttl(
                 param["info_hash"],
-                f"{param['ip']}:{param['port']}",
+                f"{peer_ip}:{param['port']}",
                 json.dumps(
                     {
                         "peer_id": param["peer_id"],
                         "info_hash": param["info_hash"],
-                        "peer_ip": param["ip"],
+                        "peer_ip": peer_ip,
                         "port": param["port"],
                         "left": param["left"],
                     }
@@ -93,7 +99,7 @@ class UDPServer(DatagramProtocol):
                 if peer_count > param["numwant"]:
                     break
                 peer_data = json.loads(peer)
-
+                print(peer_data)
                 if peer_data["left"] == 0:
                     seeders += 1
                 else:
@@ -102,10 +108,11 @@ class UDPServer(DatagramProtocol):
                 peers.append(f"{peer_data['peer_ip']}:{peer_data['port']}")
                 peer_count += 1
 
-            if check_ip_type(param["ip"]) == "IPv4":
+            if check_ip_type_string(peer_data["peer_ip"]) == "IPv4":
                 param["peers"] = addrs_to_compact(peers)
-            elif check_ip_type(param["ip"]) == "IPv6":
+            elif check_ip_type_string(peer_data["peer_ip"]) == "IPv6":
                 param["peers6"] = addrs_to_compact(peers)
+
             param["complete"] = seeders
             param["incomplete"] = leechers
             param["interval"] = ANNOUNCE_INTERVAL
@@ -157,6 +164,7 @@ class UDPServer(DatagramProtocol):
             )
             params["port"] = from_uint16(msg[96:98]) or addr[1]
             params["addr"] = f"{params['ip']}:{params['port']}"
+
             params["compact"] = 1
         return params
 

@@ -1,6 +1,11 @@
 import ipaddress
+import re
 import struct
 from typing import Literal
+
+# Regular Expressions
+IPV4_RE = re.compile(r"^[\d.]+$")
+IPV6_RE = re.compile(r"^[\da-fA-F:]+$")
 
 
 def is_valid_ip(ip: str) -> bool:
@@ -40,7 +45,7 @@ def addrs_to_compact(addrs: str | list[str]) -> bytes:
     return bytes(compact)
 
 
-def check_ip_type(address: str) -> Literal["IPv4"] | Literal["IPv6"]:
+def check_ip_type_strict(address: str) -> Literal["IPv4"] | Literal["IPv6"]:
     if not is_valid_ip(address):
         raise ValueError("Invalid IP address")
 
@@ -48,4 +53,11 @@ def check_ip_type(address: str) -> Literal["IPv4"] | Literal["IPv6"]:
     if isinstance(ip, ipaddress.IPv4Address):
         return "IPv4"
     elif isinstance(ip, ipaddress.IPv6Address):
+        return "IPv6"
+
+
+def check_ip_type_string(address: str) -> Literal["IPv4"] | Literal["IPv6"]:
+    if re.match(IPV4_RE, address):
+        return "IPv4"
+    elif re.match(IPV6_RE, address):
         return "IPv6"
