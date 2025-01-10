@@ -2,11 +2,10 @@ import ipaddress
 import struct
 
 
-def is_valid_ip(ip: str) -> bool:
+def convert_str_to_ip_object(ip: str) -> bool:
     try:
         # Try to create an IP address object (this works for both IPv4 and IPv6)
-        ipaddress.ip_address(ip)
-        return True
+        return ipaddress.ip_address(ip)
     except ValueError:
         return False
 
@@ -40,15 +39,9 @@ def addrs_to_compact(addrs: str | list[str]) -> bytes:
 
 
 def convert_ipv4_coded_ipv6_to_ipv4(ip):
-    try:
-        # Parse the input IP address
-        ip_obj = ipaddress.ip_address(ip)
-
-        # Check if it's an IPv6 address and IPv4-mapped
-        if isinstance(ip_obj, ipaddress.IPv6Address) and ip_obj.ipv4_mapped:
-            return True
-    except ValueError:
-        # Invalid IP address
+    if not (ip_obj := convert_str_to_ip_object(ip)):
         return False
 
-    return False
+    # Check if it's an IPv6 address and IPv4-mapped
+    if isinstance(ip_obj, ipaddress.IPv6Address) and ip_obj.ipv4_mapped:
+        return True

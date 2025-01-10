@@ -21,7 +21,7 @@ from .ip import (
 )
 from .ip import convert_ipv4_coded_ipv6_to_ipv4 as convert_ipv4_coded_ipv6_to_ipv4
 from .ip import (
-    is_valid_ip as is_valid_ip,
+    convert_str_to_ip_object as convert_str_to_ip_object,
 )
 from .redis import hdel as hdel
 from .redis import (

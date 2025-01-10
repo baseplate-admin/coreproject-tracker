@@ -19,7 +19,7 @@ from coreproject_tracker.functions import (
     hex_to_bin,
     hget,
     hset,
-    is_valid_ip,
+    convert_str_to_ip_object,
 )
 
 log = Logger(namespace="coreproject_tracker")
@@ -136,8 +136,9 @@ class HTTPServer(resource.Resource):
         params["numwant"] = min(numwant or DEFAULT_ANNOUNCE_PEERS, MAX_ANNOUNCE_PEERS)
 
         peer_ip = request.getClientAddress().host
-        if not is_valid_ip(peer_ip):
+        if not convert_str_to_ip_object(peer_ip):
             raise ValueError("`peer_ip` is not a valid ip")
+
         if ipv4_address := convert_ipv4_coded_ipv6_to_ipv4(peer_ip):
             params["peer_ip"] = ipv4_address
         else:
