@@ -30,49 +30,6 @@ class AnnouncePage(resource.Resource):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def validate_data(self, request: Request) -> dict[str, str | int] | bytes:
-        params = {}
-
-        info_hash_raw = request.args[b"info_hash"][0]
-        info_hash = info_hash_raw.hex()
-        if (info_hash_length := len(info_hash_raw)) > 20:
-            raise ValueError(
-                f"`info_hash` length is {info_hash_length} which is greater than 20"
-            )
-        params["info_hash"] = info_hash
-
-        port = request.args[b"port"][0].decode()
-        if not port.isdigit():
-            raise ValueError("`port` is not an integer")
-        port = int(port)
-        if port <= 0 and port >= 65535:
-            raise ValueError(f"`port` is {port} which is not in range(0, 65535)")
-        params["port"] = port
-
-        left = request.args[b"left"][0].decode()
-        if not left.isdigit():
-            raise ValueError("`left` is not an integer")
-        left = int(left)
-        params["left"] = left
-
-        numwant = request.args[b"numwant"][0].decode()
-        if not numwant.isdigit():
-            raise ValueError(b"`numwant` is not an integer")
-        numwant = int(numwant)
-        params["numwant"] = min(numwant or DEFAULT_ANNOUNCE_PEERS, MAX_ANNOUNCE_PEERS)
-
-        peer_ip = request.getClientAddress().host
-        if not is_valid_ip(peer_ip):
-            raise ValueError("`peer_ip` is not a valid ip")
-        params["peer_ip"] = peer_ip
-
-        peer_id = request.args[b"peer_id"][0].decode()
-        if not isinstance(peer_id, str):
-            raise ValueError("`peer_id` must be a str")
-        params["peer_id"] = bin_to_hex(peer_id)
-
-        return params
-
     def render_GET(self, request: Request):
         deferred = threads.deferToThread(self._render_GET, request)
         deferred.addCallback(self.on_task_done, request)
@@ -151,6 +108,49 @@ class AnnouncePage(resource.Resource):
             "incomplete": leechers,
         }
         return bencodepy.bencode(output)
+
+    def validate_data(self, request: Request) -> dict[str, str | int] | bytes:
+        params = {}
+
+        info_hash_raw = request.args[b"info_hash"][0]
+        info_hash = info_hash_raw.hex()
+        if (info_hash_length := len(info_hash_raw)) > 20:
+            raise ValueError(
+                f"`info_hash` length is {info_hash_length} which is greater than 20"
+            )
+        params["info_hash"] = info_hash
+
+        port = request.args[b"port"][0].decode()
+        if not port.isdigit():
+            raise ValueError("`port` is not an integer")
+        port = int(port)
+        if port <= 0 and port >= 65535:
+            raise ValueError(f"`port` is {port} which is not in range(0, 65535)")
+        params["port"] = port
+
+        left = request.args[b"left"][0].decode()
+        if not left.isdigit():
+            raise ValueError("`left` is not an integer")
+        left = int(left)
+        params["left"] = left
+
+        numwant = request.args[b"numwant"][0].decode()
+        if not numwant.isdigit():
+            raise ValueError(b"`numwant` is not an integer")
+        numwant = int(numwant)
+        params["numwant"] = min(numwant or DEFAULT_ANNOUNCE_PEERS, MAX_ANNOUNCE_PEERS)
+
+        peer_ip = request.getClientAddress().host
+        if not is_valid_ip(peer_ip):
+            raise ValueError("`peer_ip` is not a valid ip")
+        params["peer_ip"] = peer_ip
+
+        peer_id = request.args[b"peer_id"][0].decode()
+        if not isinstance(peer_id, str):
+            raise ValueError("`peer_id` must be a str")
+        params["peer_id"] = bin_to_hex(peer_id)
+
+        return params
 
 
 class HTTPServer(resource.Resource):
