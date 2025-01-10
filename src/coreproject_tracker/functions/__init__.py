@@ -28,3 +28,4 @@ from .redis import (
 from .redis import (
     hset_with_ttl as hset_with_ttl,
 )
+from .version import compare_versions as compare_versions

@@ -226,6 +226,4 @@ class UDPServer(DatagramProtocol):
         else:
             raise ValueError(f"Action not implemented: {action}")
 
-        print(packet.hex())
-
         return packet

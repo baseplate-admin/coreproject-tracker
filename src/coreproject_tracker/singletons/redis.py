@@ -15,10 +15,15 @@ class RedisConnectionManager:
     @classmethod
     def initialize(cls):
         """Initialize the Redis connection if it doesn't exist"""
+        from coreproject_tracker.functions import compare_versions
+
         if cls._redis_client is None:
-            cls._redis_client = Redis(
-                host="localhost", port=6379, decode_responses=True
-            )
+            client = Redis(host="localhost", port=6379, decode_responses=True)
+            redis_version = client.info().get("redis_version")
+            if compare_versions("7.4.2", redis_version) == -1:
+                raise RuntimeError("Redis needs to be at least 7.4.2")
+
+            cls._redis_client = client
 
     @classmethod
     def get_client(cls) -> Redis:

@@ -8,8 +8,10 @@ from coreproject_tracker.singletons import RedisConnectionManager
 def hset_with_ttl(hash_key, field, value, ttl_seconds):
     r = RedisConnectionManager.get_client()
 
-    expiration = time.time() + ttl_seconds
-    r.hset(hash_key, field, json.dumps({"value": value, "expires_at": expiration}))
+    expiration = int(time.time() + ttl_seconds)
+    r.hset(hash_key, field, json.dumps(value))
+
+    r.hexpireat(hash_key, expiration, field)
     r.expire(hash_key, HASH_EXPIRE_TIME)
 
 
@@ -27,15 +29,7 @@ def hget_all_with_ttl(hash_key):
 
     # Iterate over each field-value pair in the hash
     for field, value in data.items():
-        record = json.loads(value)  # Decode bytes and parse JSON
-        if time.time() < record["expires_at"]:  # Check if the field has expired
-            valid_fields[field] = record["value"]  # Add valid field to result
-        else:
-            # Optionally delete expired field
-            r.hdel(hash_key, field)
-
-    if not valid_fields:
-        r.delete(hash_key)
-        return None
+        record = json.loads(value)
+        valid_fields[field] = record
 
     return valid_fields
