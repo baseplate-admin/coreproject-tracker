@@ -40,7 +40,7 @@ def addrs_to_compact(addrs: str | list[str]) -> bytes:
     return bytes(compact)
 
 
-def check_ip_type(address: str) -> Literal["IPv4"] | Literal["IPv6"]:
+def check_ip_type_strict(address: str) -> Literal["IPv4"] | Literal["IPv6"]:
     if not is_valid_ip(address):
         raise ValueError("Invalid IP address")
 
