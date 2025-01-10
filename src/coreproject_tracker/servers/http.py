@@ -30,7 +30,7 @@ class HTTPServer(resource.Resource):
         super().__init__()
 
     def render_GET(self, request: Request):
-        deferred = threads.deferToThread(self._render_GET, request)
+        deferred = threads.deferToThread(self.__render_GET, request)
         deferred.addCallback(self.on_task_done, request)
         deferred.addErrback(self.on_task_error, request)
         return server.NOT_DONE_YET
@@ -43,7 +43,7 @@ class HTTPServer(resource.Resource):
         request.write(failure.getErrorMessage().encode())
         request.finish()
 
-    def _render_GET(self, request: Request) -> bytes:
+    def __render_GET(self, request: Request) -> bytes:
         if request.args == {}:
             request.setHeader("Content-Type", "text/html; charset=utf-8")
             return "🐟🐈 ⸜(｡˃ ᵕ ˂ )⸝♡".encode("utf-8")

@@ -35,7 +35,7 @@ class UDPServer(DatagramProtocol):
             self.transport.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     def datagramReceived(self, data, addr):
-        deferred = threads.deferToThread(self._datagramReceived, data, addr)
+        deferred = threads.deferToThread(self.__datagramReceived, data, addr)
         deferred.addCallback(self.on_task_done, addr)
         deferred.addErrback(self.on_task_error, addr)
 
@@ -49,7 +49,7 @@ class UDPServer(DatagramProtocol):
         print(failure)
         self.transport.write(failure.getErrorMessage(), addr)
 
-    def _datagramReceived(self, data, addr):
+    def __datagramReceived(self, data, addr):
         """
         Called when a datagram (UDP packet) is received.
 

@@ -18,9 +18,6 @@ from coreproject_tracker.manager import ConnectionManager
 class WebSocketServer(WebSocketServerProtocol):
     connection_manager = ConnectionManager()
 
-    def __init__(self):
-        super().__init__()
-
     def parse_websocket(self, params={}):
         params["type"] = "ws"
 
@@ -147,6 +144,7 @@ class WebSocketServer(WebSocketServerProtocol):
                     ).encode(),
                     isBinary,
                 )
+
         if params.get("answer"):
             to_peer = self.connection_manager.get_connection(
                 bin_to_hex(data["to_peer_id"])
