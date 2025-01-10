@@ -11,7 +11,6 @@ from coreproject_tracker.constants import (
     ANNOUNCE_INTERVAL,
     DEFAULT_ANNOUNCE_PEERS,
     MAX_ANNOUNCE_PEERS,
-    PEER_TTL,
 )
 from coreproject_tracker.functions import (
     bin_to_hex,
@@ -67,7 +66,6 @@ class HTTPServer(resource.Resource):
                     "left": data["left"],
                 }
             ),
-            PEER_TTL,
         )
 
         peer_count = 0

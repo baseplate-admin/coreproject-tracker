@@ -4,7 +4,6 @@ from autobahn.twisted.websocket import WebSocketServerProtocol
 
 from coreproject_tracker.constants import (
     MAX_ANNOUNCE_PEERS,
-    PEER_TTL,
     WEBSOCKET_INTERVAL,
 )
 from coreproject_tracker.functions import (
@@ -106,7 +105,6 @@ class WebSocketServer(WebSocketServerProtocol):
                     "left": data["left"],
                 }
             ),
-            PEER_TTL,
         )
 
         seeders = 0

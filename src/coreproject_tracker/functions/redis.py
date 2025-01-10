@@ -1,14 +1,16 @@
-import json
 import time
 
-from coreproject_tracker.constants import HASH_EXPIRE_TIME
+from coreproject_tracker.constants import (
+    HASH_EXPIRE_TIME,
+    PEER_TTL,
+)
 from coreproject_tracker.singletons import RedisConnectionManager
 
 
-def hset_with_ttl(hash_key, field, value, ttl_seconds):
+def hset_with_ttl(hash_key, field, value):
     r = RedisConnectionManager.get_client()
 
-    expiration = int(time.time() + ttl_seconds)
+    expiration = int(time.time() + PEER_TTL)
     r.hset(hash_key, field, value)
 
     r.hexpireat(hash_key, expiration, field)

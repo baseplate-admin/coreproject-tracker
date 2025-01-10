@@ -18,7 +18,7 @@ def parse_version(version: str):
 
 def compare_versions(version1: str, version2: str) -> int:
     """
-    Example usage
+    Example Usage
     -------------
     result = compare_versions("7.3.5", "7.4.2-alpha")
     if result == -1:
