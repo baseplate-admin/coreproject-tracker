@@ -154,7 +154,7 @@ class WebSocketServer(WebSocketServerProtocol):
 
         response = {}
         response["action"] = data["action"]
-        hset_with_ttl(
+        hset(
             data["info_hash"],
             data["addr"],
             json.dumps(
@@ -171,7 +171,7 @@ class WebSocketServer(WebSocketServerProtocol):
         seeders = 0
         leechers = 0
 
-        redis_data = hget_all_with_ttl(data["info_hash"])
+        redis_data = hget(data["info_hash"])
         peers_list = [json.loads(peer) for peer in redis_data.values()]
 
         for peer in peers_list:
