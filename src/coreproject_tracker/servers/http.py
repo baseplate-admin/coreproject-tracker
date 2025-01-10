@@ -1,4 +1,5 @@
 import json
+import random
 from http import HTTPStatus
 
 import bencodepy
@@ -75,7 +76,11 @@ class HTTPServer(resource.Resource):
         leechers = 0
 
         redis_data = hget(data["info_hash"])
-        peers_list = redis_data.values()
+
+        try:
+            peers_list = random.sample(list(redis_data.values()), data["numwant"])
+        except ValueError:
+            peers_list = redis_data.values()
 
         for peer in peers_list:
             if peer_count > data["numwant"]:

@@ -1,4 +1,5 @@
 import json
+import random
 import struct
 
 from twisted.internet import threads
@@ -76,7 +77,10 @@ class UDPServer(DatagramProtocol):
             leechers = 0
 
             redis_data = hget(param["info_hash"])
-            peers_list = redis_data.values()
+            try:
+                peers_list = random.sample(list(redis_data.values()), param["numwant"])
+            except ValueError:
+                peers_list = redis_data.values()
 
             for peer in peers_list:
                 if peer_count > param["numwant"]:

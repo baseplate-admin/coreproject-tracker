@@ -6,6 +6,7 @@ from autobahn.twisted.websocket import WebSocketServerProtocol
 from twisted.internet import reactor, threads
 
 from coreproject_tracker.constants import (
+    DEFAULT_ANNOUNCE_PEERS,
     MAX_ANNOUNCE_PEERS,
     WEBSOCKET_INTERVAL,
 )
@@ -172,10 +173,10 @@ class WebSocketServer(WebSocketServerProtocol):
             except (ValueError, TypeError, KeyError):
                 params["left"] = float("inf")
 
-            if offers := params.get("offers"):
-                params["numwant"] = len(offers)
-            else:
-                params["numwant"] = MAX_ANNOUNCE_PEERS
+            params["numwant"] = min(
+                params.get("offers", DEFAULT_ANNOUNCE_PEERS),
+                MAX_ANNOUNCE_PEERS,
+            )
 
         client_ip = self.transport.getPeer().host
         client_port = self.transport.getPeer().port
