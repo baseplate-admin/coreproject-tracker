@@ -25,8 +25,10 @@ log = Logger(namespace="coreproject_tracker")
 
 
 class HTTPServer(resource.Resource):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    isLeaf = True
+
+    def __init__(self):
+        super().__init__()
 
     def render_GET(self, request: Request):
         deferred = threads.deferToThread(self._render_GET, request)
