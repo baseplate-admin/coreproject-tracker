@@ -9,7 +9,7 @@ def hset_with_ttl(hash_key, field, value, ttl_seconds):
     r = RedisConnectionManager.get_client()
 
     expiration = int(time.time() + ttl_seconds)
-    r.hset(hash_key, field, json.dumps(value))
+    r.hset(hash_key, field, value)
 
     r.hexpireat(hash_key, expiration, field)
     r.expire(hash_key, HASH_EXPIRE_TIME)
@@ -29,7 +29,6 @@ def hget_all_with_ttl(hash_key):
 
     # Iterate over each field-value pair in the hash
     for field, value in data.items():
-        record = json.loads(value)
-        valid_fields[field] = record
+        valid_fields[field] = value
 
     return valid_fields
