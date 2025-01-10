@@ -74,7 +74,7 @@ class AnnouncePage(resource.Resource):
         return params
 
     def render_GET(self, request: Request):
-        deferred = threads.deferToThread(self.process, request)
+        deferred = threads.deferToThread(self._render_GET, request)
         deferred.addCallback(self.on_task_done, request)
         deferred.addErrback(self.on_task_error, request)
         return server.NOT_DONE_YET
@@ -84,10 +84,10 @@ class AnnouncePage(resource.Resource):
         request.finish()
 
     def on_task_error(self, failure, request):
-        request.write(failure.getErrorMessage())
+        request.write(failure.getErrorMessage().encode())
         request.finish()
 
-    def process(self, request: Request) -> bytes:
+    def _render_GET(self, request: Request) -> bytes:
         if request.args == {}:
             request.setHeader("Content-Type", "text/html; charset=utf-8")
             return "🐟🐈 ⸜(｡˃ ᵕ ˂ )⸝♡".encode("utf-8")
@@ -143,15 +143,14 @@ class AnnouncePage(resource.Resource):
 
             peer_count += 1
 
-        return bencodepy.bencode(
-            {
-                "peers": peers,
-                "peers6": peers6,
-                "min interval": ANNOUNCE_INTERVAL,
-                "complete": seeders,
-                "incomplete": leechers,
-            }
-        )
+        output = {
+            "peers": peers,
+            "peers6": peers6,
+            "min interval": ANNOUNCE_INTERVAL,
+            "complete": seeders,
+            "incomplete": leechers,
+        }
+        return bencodepy.bencode(output)
 
 
 class HTTPServer(resource.Resource):
