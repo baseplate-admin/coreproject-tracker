@@ -30,9 +30,13 @@ log = Logger(namespace="coreproject_tracker")
 
 class UDPServer(DatagramProtocol):
     def startProtocol(self):
-        # On Linux, we could set SO_REUSEPORT, but it's not available on other OSs
         if platform.system() == "Linux":
-            self.transport.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.transport.socket.setsockopt(
+                socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0
+            )  # Allow both IPv4 and IPv6
+            self.transport.socket.setsockopt(
+                socket.SOL_SOCKET, socket.SO_REUSEADDR, 1
+            )  # Reuse address
 
     def datagramReceived(self, data, addr):
         deferred = threads.deferToThread(self.__datagramReceived, data, addr)
@@ -62,7 +66,7 @@ class UDPServer(DatagramProtocol):
             )
 
         param = self.parse_udp_packet(data, addr)
-
+        print(param)
         if param["action"] == ACTIONS.ANNOUNCE:
             hset_with_ttl(
                 param["info_hash"],

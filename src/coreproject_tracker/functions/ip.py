@@ -49,3 +49,19 @@ def check_ip_type_strict(address: str) -> Literal["IPv4"] | Literal["IPv6"]:
         return "IPv4"
     elif isinstance(ip, ipaddress.IPv6Address):
         return "IPv6"
+
+
+def ipv6_to_ipv4(ipv6_addr):
+    # Check if the IPv6 address is an IPv4-mapped address (starts with ::ffff:)
+    try:
+        # Parse the IPv6 address
+        ip = ipaddress.IPv6Address(ipv6_addr)
+
+        # Check if it's an IPv4-mapped IPv6 address
+        if ip.ipv4_mapped:
+            # Convert the IPv4-mapped IPv6 address to IPv4
+            return str(ip.ipv4_mapped)
+        else:
+            return None  # Not an IPv4-mapped IPv6 address
+    except ValueError:
+        return None  # Invalid IPv6 address
