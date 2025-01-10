@@ -13,13 +13,14 @@ from coreproject_tracker.servers import (
 from coreproject_tracker.singletons.redis import RedisConnectionManager
 
 
-def make_app(udp_port=9000, http_port=8000, websocket_port=8080):
+def make_app(udp_port=8000, http_port=9000, websocket_port=8080):
     console_observer = textFileLogObserver(sys.stdout)
     globalLogPublisher.addObserver(console_observer)
 
     RedisConnectionManager.initialize()
 
     # UDP Server
+    reactor.listenUDP(udp_port, UDPServer(), interface="127.0.0.1")
     reactor.listenUDP(udp_port, UDPServer(), interface="::")
 
     # HTTP Server

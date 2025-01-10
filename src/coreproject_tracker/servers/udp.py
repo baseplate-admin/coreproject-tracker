@@ -18,6 +18,7 @@ from coreproject_tracker.constants import (
 )
 from coreproject_tracker.functions import (
     addrs_to_compact,
+    check_ip_type,
     from_uint16,
     from_uint32,
     from_uint64,
@@ -31,16 +32,9 @@ log = Logger(namespace="coreproject_tracker")
 
 class UDPServer(DatagramProtocol):
     def startProtocol(self):
-        # Get the underlying socket
-        self.transport.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
         # On Linux, we could set SO_REUSEPORT, but it's not available on other OSs
         if platform.system() == "Linux":
-            self.transport.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-
-        # Optional: Set IPV6_V6ONLY to allow dual-stack on some systems (may not be necessary)
-        if platform.system() == "Linux":
-            self.transport.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+            self.transport.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     def datagramReceived(self, data, addr):
         deferred = threads.deferToThread(self._datagramReceived, data, addr)
@@ -74,7 +68,7 @@ class UDPServer(DatagramProtocol):
         if param["action"] == ACTIONS.ANNOUNCE:
             hset_with_ttl(
                 param["info_hash"],
-                f"{data['ip']}:{data['port']}",
+                f"{param['ip']}:{param['port']}",
                 json.dumps(
                     {
                         "peer_id": param["peer_id"],
@@ -108,7 +102,10 @@ class UDPServer(DatagramProtocol):
                 peers.append(f"{peer_data['peer_ip']}:{peer_data['port']}")
                 peer_count += 1
 
-            param["peers"] = addrs_to_compact(peers)
+            if check_ip_type(param["ip"]) == "IPv4":
+                param["peers"] = addrs_to_compact(peers)
+            elif check_ip_type(param["ip"]) == "IPv6":
+                param["peers6"] = addrs_to_compact(peers)
             param["complete"] = seeders
             param["incomplete"] = leechers
             param["interval"] = ANNOUNCE_INTERVAL
@@ -163,8 +160,7 @@ class UDPServer(DatagramProtocol):
             params["compact"] = 1
         return params
 
-    @staticmethod
-    def make_udp_packet(params: dict[str, int | bytes | dict]) -> bytes:
+    def make_udp_packet(self, params: dict[str, int | bytes | dict]) -> bytes:
         """
         Create UDP packets for BitTorrent tracker protocol.
 
@@ -197,7 +193,7 @@ class UDPServer(DatagramProtocol):
                     to_uint32(params["interval"]),
                     to_uint32(params["incomplete"]),
                     to_uint32(params["complete"]),
-                    params["peers"],
+                    params.get("peers", b""),
                 ]
             )
 
