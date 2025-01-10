@@ -1,3 +1,4 @@
+import contextlib
 import json
 
 from autobahn.twisted.websocket import WebSocketServerProtocol
@@ -25,8 +26,8 @@ class WebSocketServer(WebSocketServerProtocol):
         """
         threads.deferToThread(self.__onMessage, payload, isBinary)
 
-    def __sendMessage(self, message):
-        reactor.callFromThread(self.sendMessage, message)
+    def __sendMessage(self, message, isBinary):
+        reactor.callFromThread(self.sendMessage, message, isBinary)
 
     def __onMessage(self, payload, isBinary):
         payload = payload.decode("utf8") if not isBinary else payload
@@ -52,7 +53,7 @@ class WebSocketServer(WebSocketServerProtocol):
                 {
                     "peer_id": data["peer_id"],
                     "info_hash": data["info_hash"],
-                    "peer_ip": data["peer_ip"],
+                    "peer_ip": data["ip"],
                     "port": data["port"],
                     "left": data["left"],
                 }
@@ -86,19 +87,23 @@ class WebSocketServer(WebSocketServerProtocol):
 
         if (offers := params.get("offers")) and isinstance(offers, list):
             for index, peer in enumerate(peers_list):
-                peer_instance = self.connection_manager.get_connection(peer["peer_id"])
-                peer_instance.sendMessage(
-                    json.dumps(
-                        {
-                            "action": "announce",
-                            "offer": params["offers"][index]["offer"],
-                            "offer_id": params["offers"][index]["offer_id"],
-                            "peer_id": hex_to_bin(params["peer_id"]),
-                            "info_hash": hex_to_bin(params["info_hash"]),
-                        }
-                    ).encode(),
-                    isBinary,
-                )
+                # Peer doesn't exist in connection manager raises AttributeError
+                with contextlib.suppress(AttributeError):
+                    peer_instance = self.connection_manager.get_connection(
+                        peer["peer_id"]
+                    )
+                    peer_instance.sendMessage(
+                        json.dumps(
+                            {
+                                "action": "announce",
+                                "offer": params["offers"][index]["offer"],
+                                "offer_id": params["offers"][index]["offer_id"],
+                                "peer_id": hex_to_bin(params["peer_id"]),
+                                "info_hash": hex_to_bin(params["info_hash"]),
+                            }
+                        ).encode(),
+                        isBinary,
+                    )
 
         if params.get("answer"):
             to_peer = self.connection_manager.get_connection(
