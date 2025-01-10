@@ -19,6 +19,7 @@ from .ip import (
 from .ip import (
     addrs_to_compact as addrs_to_compact,
 )
+from .ip import convert_ipv4_coded_ipv6_to_ipv4 as convert_ipv4_coded_ipv6_to_ipv4
 from .ip import (
     is_valid_ip as is_valid_ip,
 )

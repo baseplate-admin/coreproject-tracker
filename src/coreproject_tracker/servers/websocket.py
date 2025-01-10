@@ -10,7 +10,14 @@ from coreproject_tracker.constants import (
     MAX_ANNOUNCE_PEERS,
     WEBSOCKET_INTERVAL,
 )
-from coreproject_tracker.functions import bin_to_hex, hdel, hex_to_bin, hget, hset
+from coreproject_tracker.functions import (
+    bin_to_hex,
+    convert_ipv4_coded_ipv6_to_ipv4,
+    hdel,
+    hex_to_bin,
+    hget,
+    hset,
+)
 from coreproject_tracker.manager import ConnectionManager
 
 
@@ -182,7 +189,11 @@ class WebSocketServer(WebSocketServerProtocol):
         client_ip = self.transport.getPeer().host
         client_port = self.transport.getPeer().port
 
-        params["ip"] = client_ip
+        if ipv4_address := convert_ipv4_coded_ipv6_to_ipv4(client_ip):
+            params["ip"] = ipv4_address
+        else:
+            params["ip"] = client_ip
+
         params["port"] = client_port
         params["addr"] = f"{client_ip}:{client_port}"
         return params

@@ -15,6 +15,7 @@ from coreproject_tracker.constants import (
 from coreproject_tracker.enums import ACTIONS
 from coreproject_tracker.functions import (
     addrs_to_compact,
+    convert_ipv4_coded_ipv6_to_ipv4,
     from_uint16,
     from_uint32,
     from_uint64,
@@ -56,6 +57,7 @@ class UDPServer(DatagramProtocol):
             )
 
         param = self.parse_udp_packet(data, addr)
+
         if param["action"] == ACTIONS.ANNOUNCE:
             hset(
                 param["info_hash"],
@@ -76,7 +78,7 @@ class UDPServer(DatagramProtocol):
             leechers = 0
 
             redis_data = hget(param["info_hash"])
-            peers_list = get_n_random_items(redis_data.values())
+            peers_list = get_n_random_items(redis_data.values(), param["numwant"])
 
             for peer in peers_list:
                 peer_data = json.loads(peer)
@@ -133,7 +135,13 @@ class UDPServer(DatagramProtocol):
             if not params["event"]:
                 raise ValueError("Invalid event")
 
-            params["ip"] = from_uint32(msg[84:88]) or addr[0]
+            ip = from_uint32(msg[84:88]) or addr[0]
+
+            if ipv4_address := convert_ipv4_coded_ipv6_to_ipv4(ip):
+                params["ip"] = ipv4_address
+            else:
+                params["ip"] = ip
+
             params["key"] = from_uint32(msg[88:92])
 
             params["numwant"] = min(

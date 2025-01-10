@@ -14,6 +14,7 @@ from coreproject_tracker.constants import (
 )
 from coreproject_tracker.functions import (
     bin_to_hex,
+    convert_ipv4_coded_ipv6_to_ipv4,
     get_n_random_items,
     hex_to_bin,
     hget,
@@ -50,7 +51,7 @@ class HTTPServer(resource.Resource):
             return "🐟🐈 ⸜(｡˃ ᵕ ˂ )⸝♡".encode("utf-8")
 
         try:
-            data = self.validate_data(request)
+            data = self.parse_data(request)
         except ValueError as e:
             request.setResponseCode(HTTPStatus.BAD_REQUEST)
             return bencodepy.bencode({"failure reason": e})
@@ -103,7 +104,7 @@ class HTTPServer(resource.Resource):
         }
         return bencodepy.bencode(output)
 
-    def validate_data(self, request: Request) -> dict[str, str | int] | bytes:
+    def parse_data(self, request: Request) -> dict[str, str | int] | bytes:
         params = {}
 
         info_hash_raw = request.args[b"info_hash"][0]
@@ -137,7 +138,10 @@ class HTTPServer(resource.Resource):
         peer_ip = request.getClientAddress().host
         if not is_valid_ip(peer_ip):
             raise ValueError("`peer_ip` is not a valid ip")
-        params["peer_ip"] = peer_ip
+        if ipv4_address := convert_ipv4_coded_ipv6_to_ipv4(peer_ip):
+            params["peer_ip"] = ipv4_address
+        else:
+            params["peer_ip"] = peer_ip
 
         peer_id = request.args[b"peer_id"][0].decode()
         if not isinstance(peer_id, str):
