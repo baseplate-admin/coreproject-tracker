@@ -2,8 +2,9 @@ import json
 from http import HTTPStatus
 
 import bencodepy
+from twisted.internet import threads
 from twisted.logger import Logger
-from twisted.web.resource import Resource
+from twisted.web import resource, server
 from twisted.web.server import Request
 
 from coreproject_tracker.constants import (
@@ -23,7 +24,7 @@ from coreproject_tracker.functions import (
 log = Logger(namespace="coreproject_tracker")
 
 
-class AnnouncePage(Resource):
+class AnnouncePage(resource.Resource):
     isLeaf = True
 
     def __init__(self, *args, **kwargs):
@@ -72,7 +73,21 @@ class AnnouncePage(Resource):
 
         return params
 
-    def render_GET(self, request: Request) -> bytes:
+    def render_GET(self, request: Request):
+        deferred = threads.deferToThread(self._render_GET, request)
+        deferred.addCallback(self.on_task_done, request)
+        deferred.addErrback(self.on_task_error, request)
+        return server.NOT_DONE_YET
+
+    def on_task_done(self, result, request):
+        request.write(result)
+        request.finish()
+
+    def on_task_error(self, failure, request):
+        request.write(failure.getErrorMessage().encode())
+        request.finish()
+
+    def _render_GET(self, request: Request) -> bytes:
         if request.args == {}:
             request.setHeader("Content-Type", "text/html; charset=utf-8")
             return "🐟🐈 ⸜(｡˃ ᵕ ˂ )⸝♡".encode("utf-8")
@@ -128,18 +143,17 @@ class AnnouncePage(Resource):
 
             peer_count += 1
 
-        return bencodepy.bencode(
-            {
-                "peers": peers,
-                "peers6": peers6,
-                "min interval": ANNOUNCE_INTERVAL,
-                "complete": seeders,
-                "incomplete": leechers,
-            }
-        )
+        output = {
+            "peers": peers,
+            "peers6": peers6,
+            "min interval": ANNOUNCE_INTERVAL,
+            "complete": seeders,
+            "incomplete": leechers,
+        }
+        return bencodepy.bencode(output)
 
 
-class HTTPServer(Resource):
+class HTTPServer(resource.Resource):
     def __init__(self):
         super().__init__()
         self.putChild(b"announce", AnnouncePage())
