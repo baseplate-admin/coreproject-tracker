@@ -1,4 +1,6 @@
 import json
+import platform
+import socket
 import struct
 
 from twisted.internet import threads
@@ -28,8 +30,17 @@ log = Logger(namespace="coreproject_tracker")
 
 
 class UDPServer(DatagramProtocol):
-    def __init__(self):
-        super().__init__()
+    def startProtocol(self):
+        # Get the underlying socket
+        self.transport.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+        # On Linux, we could set SO_REUSEPORT, but it's not available on other OSs
+        if platform.system() == "Linux":
+            self.transport.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+
+        # Optional: Set IPV6_V6ONLY to allow dual-stack on some systems (may not be necessary)
+        if platform.system() == "Linux":
+            self.transport.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
 
     def datagramReceived(self, data, addr):
         deferred = threads.deferToThread(self._datagramReceived, data, addr)

@@ -20,7 +20,6 @@ def make_app(udp_port=9000, http_port=8000, websocket_port=8080):
     RedisConnectionManager.initialize()
 
     # UDP Server
-    reactor.listenUDP(udp_port, UDPServer(), interface="127.0.0.1")
     reactor.listenUDP(udp_port, UDPServer(), interface="::")
 
     # HTTP Server
