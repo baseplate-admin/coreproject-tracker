@@ -1,8 +1,10 @@
+from typing import Optional
+
 from redis import Redis
 
 
 class RedisConnectionManager:
-    _instance: "RedisConnectionManager" | None = None
+    _instance: Optional["RedisConnectionManager"] = None
     _redis_client: Redis | None = None
 
     def __new__(cls):

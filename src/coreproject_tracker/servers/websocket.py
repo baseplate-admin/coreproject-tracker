@@ -86,7 +86,7 @@ class ConnectionManager:
 
 
 class WebSocketServer(WebSocketServerProtocol):
-    connection_manager = ConnectionManager(inactive_timeout=600)
+    connection_manager = ConnectionManager()
 
     def __init__(self):
         super().__init__()
