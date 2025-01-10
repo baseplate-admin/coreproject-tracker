@@ -1,6 +1,4 @@
 import json
-import platform
-import socket
 import struct
 
 from twisted.internet import threads
@@ -17,13 +15,13 @@ from coreproject_tracker.constants import (
 from coreproject_tracker.enums import ACTIONS
 from coreproject_tracker.functions import (
     addrs_to_compact,
+    check_ip_type_strict,
     from_uint16,
     from_uint32,
     from_uint64,
     hget,
     hset,
     to_uint32,
-    check_ip_type_strict,
 )
 
 log = Logger(namespace="coreproject_tracker")
@@ -167,6 +165,7 @@ class UDPServer(DatagramProtocol):
             ValueError: If the action is not implemented
         """
         action = params["action"]
+        
 
         if action == ACTIONS.CONNECT:
             packet = b"".join(
