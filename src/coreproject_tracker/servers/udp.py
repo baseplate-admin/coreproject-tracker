@@ -1,5 +1,4 @@
 import json
-import random
 import struct
 
 from twisted.internet import threads
@@ -19,6 +18,7 @@ from coreproject_tracker.functions import (
     from_uint16,
     from_uint32,
     from_uint64,
+    get_n_random_items,
     hget,
     hset,
     to_uint32,
@@ -71,20 +71,14 @@ class UDPServer(DatagramProtocol):
                 ),
             )
 
-            peer_count = 0
             peers = []
             seeders = 0
             leechers = 0
 
             redis_data = hget(param["info_hash"])
-            try:
-                peers_list = random.sample(list(redis_data.values()), param["numwant"])
-            except ValueError:
-                peers_list = redis_data.values()
+            peers_list = get_n_random_items(redis_data.values())
 
             for peer in peers_list:
-                if peer_count > param["numwant"]:
-                    break
                 peer_data = json.loads(peer)
 
                 if peer_data["left"] == 0:
@@ -93,8 +87,6 @@ class UDPServer(DatagramProtocol):
                     leechers += 1
 
                 peers.append(f"{peer_data['peer_ip']}:{peer_data['port']}")
-
-                peer_count += 1
 
             param["peers"] = addrs_to_compact(peers)
 

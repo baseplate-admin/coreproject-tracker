@@ -1,5 +1,4 @@
 import json
-import random
 from http import HTTPStatus
 
 import bencodepy
@@ -15,6 +14,7 @@ from coreproject_tracker.constants import (
 )
 from coreproject_tracker.functions import (
     bin_to_hex,
+    get_n_random_items,
     hex_to_bin,
     hget,
     hset,
@@ -69,7 +69,6 @@ class HTTPServer(resource.Resource):
             ),
         )
 
-        peer_count = 0
         peers = []
         peers6 = []
         seeders = 0
@@ -77,15 +76,9 @@ class HTTPServer(resource.Resource):
 
         redis_data = hget(data["info_hash"])
 
-        try:
-            peers_list = random.sample(list(redis_data.values()), data["numwant"])
-        except ValueError:
-            peers_list = redis_data.values()
+        peers_list = get_n_random_items(redis_data.values(), data["numwant"])
 
         for peer in peers_list:
-            if peer_count > data["numwant"]:
-                break
-
             peer_data = json.loads(peer)
 
             if peer_data["left"] == 0:
@@ -100,7 +93,6 @@ class HTTPServer(resource.Resource):
                     "port": peer_data["port"],
                 }
             )
-            peer_count += 1
 
         output = {
             "peers": peers,

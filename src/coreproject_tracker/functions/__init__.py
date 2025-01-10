@@ -1,3 +1,4 @@
+from .array import get_n_random_items as get_n_random_items
 from .bytes import (
     from_uint16 as from_uint16,
 )
