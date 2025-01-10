@@ -1,6 +1,7 @@
 import contextlib
 import json
 
+from autobahn.exception import Disconnected
 from autobahn.twisted.websocket import WebSocketServerProtocol
 from twisted.internet import reactor, threads
 
@@ -88,8 +89,10 @@ class WebSocketServer(WebSocketServerProtocol):
         if (offers := params.get("offers")) and isinstance(offers, list):
             for peer in peers_list:
                 for offer in offers:
-                    # Peer doesn't exist in connection manager raises AttributeError
-                    with contextlib.suppress(AttributeError):
+                    with contextlib.suppress(
+                        AttributeError,  # Peer doesn't exist in connection manager raises AttributeError
+                        Disconnected,
+                    ):
                         peer_instance = self.__connection_manager.get_connection(
                             peer["peer_id"]
                         )
