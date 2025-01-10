@@ -20,8 +20,8 @@ from coreproject_tracker.functions import (
     from_uint16,
     from_uint32,
     from_uint64,
-    hget_all_with_ttl,
-    hset_with_ttl,
+    hget,
+    hset,
     to_uint32,
 )
 
@@ -64,7 +64,7 @@ class UDPServer(DatagramProtocol):
         param = self.parse_udp_packet(data, addr)
 
         if param["action"] == ACTIONS.ANNOUNCE:
-            hset_with_ttl(
+            hset(
                 param["info_hash"],
                 f"{param["ip"]}:{param['port']}",
                 json.dumps(
@@ -83,7 +83,7 @@ class UDPServer(DatagramProtocol):
             seeders = 0
             leechers = 0
 
-            redis_data = hget_all_with_ttl(param["info_hash"])
+            redis_data = hget(param["info_hash"])
             peers_list = redis_data.values()
 
             for peer in peers_list:

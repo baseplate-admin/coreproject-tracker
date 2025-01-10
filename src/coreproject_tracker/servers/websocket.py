@@ -9,12 +9,7 @@ from coreproject_tracker.constants import (
     MAX_ANNOUNCE_PEERS,
     WEBSOCKET_INTERVAL,
 )
-from coreproject_tracker.functions import (
-    bin_to_hex,
-    hex_to_bin,
-    hget_all_with_ttl,
-    hset_with_ttl,
-)
+from coreproject_tracker.functions import bin_to_hex, hdel, hex_to_bin, hget, hset
 from coreproject_tracker.manager import ConnectionManager
 
 
@@ -47,7 +42,7 @@ class WebSocketServer(WebSocketServerProtocol):
 
         response = {}
         response["action"] = data["action"]
-        hset_with_ttl(
+        hset(
             data["info_hash"],
             data["addr"],
             json.dumps(
@@ -64,10 +59,10 @@ class WebSocketServer(WebSocketServerProtocol):
         seeders = 0
         leechers = 0
 
-        redis_data = hget_all_with_ttl(data["info_hash"])
-        peers_list = [json.loads(peer) for peer in redis_data.values()]
+        redis_data = hget(data["info_hash"])
 
-        for peer in peers_list:
+        for peer in redis_data.values():
+            peer = json.loads(peer)
             if peer["left"] == 0:
                 seeders += 1
             else:
@@ -87,27 +82,28 @@ class WebSocketServer(WebSocketServerProtocol):
         self.__connection_manager.add_connection(data["peer_id"], self)
 
         if (offers := params.get("offers")) and isinstance(offers, list):
-            for peer in peers_list:
-                for offer in offers:
-                    with contextlib.suppress(
-                        AttributeError,  # Peer doesn't exist in connection manager raises AttributeError
-                        Disconnected,
-                    ):
-                        peer_instance = self.__connection_manager.get_connection(
-                            peer["peer_id"]
-                        )
-                        peer_instance.sendMessage(
-                            json.dumps(
-                                {
-                                    "action": "announce",
-                                    "offer": offer["offer"],
-                                    "offer_id": offer["offer_id"],
-                                    "peer_id": hex_to_bin(params["peer_id"]),
-                                    "info_hash": hex_to_bin(params["info_hash"]),
-                                }
-                            ).encode(),
-                            isBinary,
-                        )
+            for key, peer in redis_data.items():
+                try:
+                    for offer in offers:
+                        # Peer doesn't exist in connection manager raises AttributeError
+                        with contextlib.suppress(AttributeError):
+                            peer_instance = self.__connection_manager.get_connection(
+                                peer["peer_id"]
+                            )
+                            peer_instance.sendMessage(
+                                json.dumps(
+                                    {
+                                        "action": "announce",
+                                        "offer": offer["offer"],
+                                        "offer_id": offer["offer_id"],
+                                        "peer_id": hex_to_bin(params["peer_id"]),
+                                        "info_hash": hex_to_bin(params["info_hash"]),
+                                    }
+                                ).encode(),
+                                isBinary,
+                            )
+                except Disconnected:
+                    hdel(data["info_hash"], key)
 
         if params.get("answer"):
             to_peer = self.__connection_manager.get_connection(
