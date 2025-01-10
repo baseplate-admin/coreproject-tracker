@@ -18,8 +18,6 @@ from coreproject_tracker.constants import (
 )
 from coreproject_tracker.functions import (
     addrs_to_compact,
-    check_ip_type_strict,
-    check_ip_type_string,
     from_uint16,
     from_uint32,
     from_uint64,
@@ -67,10 +65,12 @@ class UDPServer(DatagramProtocol):
         param = self.parse_udp_packet(data, addr)
 
         if param["action"] == ACTIONS.ANNOUNCE:
-            if check_ip_type_strict(param["ip"]) == "IPv4":
-                peer_ip = param["ip"]
-            elif check_ip_type_strict(param["ip"]) == "IPv6":
-                peer_ip = f"[{param['ip']}]"
+            peer_ip = param["ip"]
+
+            # if check_ip_type_strict(param["ip"]) == "IPv4":
+            #     peer_ip = param["ip"]
+            # elif check_ip_type_strict(param["ip"]) == "IPv6":
+            #     peer_ip = f"[{param['ip']}]"
 
             hset_with_ttl(
                 param["info_hash"],
@@ -99,7 +99,7 @@ class UDPServer(DatagramProtocol):
                 if peer_count > param["numwant"]:
                     break
                 peer_data = json.loads(peer)
-                print(peer_data)
+
                 if peer_data["left"] == 0:
                     seeders += 1
                 else:
@@ -108,10 +108,7 @@ class UDPServer(DatagramProtocol):
                 peers.append(f"{peer_data['peer_ip']}:{peer_data['port']}")
                 peer_count += 1
 
-            if check_ip_type_string(peer_data["peer_ip"]) == "IPv4":
-                param["peers"] = addrs_to_compact(peers)
-            elif check_ip_type_string(peer_data["peer_ip"]) == "IPv6":
-                param["peers6"] = addrs_to_compact(peers)
+            param["peers"] = addrs_to_compact(peers)
 
             param["complete"] = seeders
             param["incomplete"] = leechers
@@ -201,7 +198,7 @@ class UDPServer(DatagramProtocol):
                     to_uint32(params["interval"]),
                     to_uint32(params["incomplete"]),
                     to_uint32(params["complete"]),
-                    params.get("peers", b""),
+                    params["peers"],
                 ]
             )
 
@@ -235,5 +232,7 @@ class UDPServer(DatagramProtocol):
 
         else:
             raise ValueError(f"Action not implemented: {action}")
+
+        print(packet.hex())
 
         return packet

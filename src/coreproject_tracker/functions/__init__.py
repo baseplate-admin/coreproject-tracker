@@ -19,7 +19,6 @@ from .ip import (
     addrs_to_compact as addrs_to_compact,
 )
 from .ip import check_ip_type_strict as check_ip_type_strict
-from .ip import check_ip_type_string as check_ip_type_string
 from .ip import (
     is_valid_ip as is_valid_ip,
 )
