@@ -38,30 +38,3 @@ def addrs_to_compact(addrs: str | list[str]) -> bytes:
         compact.extend(ip_bytes + port_bytes)
 
     return bytes(compact)
-
-
-def check_ip_type_strict(address: str) -> Literal["IPv4"] | Literal["IPv6"]:
-    if not is_valid_ip(address):
-        raise ValueError("Invalid IP address")
-
-    ip = ipaddress.ip_address(address)
-    if isinstance(ip, ipaddress.IPv4Address):
-        return "IPv4"
-    elif isinstance(ip, ipaddress.IPv6Address):
-        return "IPv6"
-
-
-def ipv6_to_ipv4(ipv6_addr):
-    # Check if the IPv6 address is an IPv4-mapped address (starts with ::ffff:)
-    try:
-        # Parse the IPv6 address
-        ip = ipaddress.IPv6Address(ipv6_addr)
-
-        # Check if it's an IPv4-mapped IPv6 address
-        if ip.ipv4_mapped:
-            # Convert the IPv4-mapped IPv6 address to IPv4
-            return str(ip.ipv4_mapped)
-        else:
-            return None  # Not an IPv4-mapped IPv6 address
-    except ValueError:
-        return None  # Invalid IPv6 address
