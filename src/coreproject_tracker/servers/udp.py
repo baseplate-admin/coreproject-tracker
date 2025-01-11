@@ -58,7 +58,6 @@ class UDPServer(DatagramProtocol):
             )
 
         param = self.parse_udp_packet(data, addr)
-
         if param["action"] == ACTIONS.ANNOUNCE:
             hset(
                 param["info_hash"],
@@ -119,7 +118,6 @@ class UDPServer(DatagramProtocol):
             "connection_id": connection_id,
             "action": action,
             "transaction_id": transaction_id,
-            "type": "udp",
         }
 
         if params["action"] == ACTIONS.ANNOUNCE:
@@ -139,10 +137,7 @@ class UDPServer(DatagramProtocol):
 
             ip = from_uint32(msg[84:88]) or addr[0]
 
-            if ipv4_address := convert_ipv4_coded_ipv6_to_ipv4(ip):
-                params["ip"] = ipv4_address
-            else:
-                params["ip"] = ip
+            params["ip"] = ip
 
             params["key"] = from_uint32(msg[88:92])
 
@@ -169,7 +164,6 @@ class UDPServer(DatagramProtocol):
             ValueError: If the action is not implemented
         """
         action = params["action"]
-
         if action == ACTIONS.CONNECT:
             packet = b"".join(
                 [
