@@ -1,7 +1,3 @@
-<<<<<<< Updated upstream
-from .events import EVENTS as EVENTS
-=======
->>>>>>> Stashed changes
 from .interval import (
     ANNOUNCE_INTERVAL as ANNOUNCE_INTERVAL,
 )

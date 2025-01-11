@@ -9,10 +9,6 @@ from coreproject_tracker.constants import (
     ANNOUNCE_INTERVAL,
     CONNECTION_ID,
     DEFAULT_ANNOUNCE_PEERS,
-<<<<<<< Updated upstream
-    EVENTS,
-=======
->>>>>>> Stashed changes
     MAX_ANNOUNCE_PEERS,
 )
 from coreproject_tracker.enums import ACTIONS, EVENT_NAMES
@@ -24,6 +20,7 @@ from coreproject_tracker.functions import (
     from_uint32,
     from_uint64,
     get_n_random_items,
+    hdel,
     hget,
     hset,
     to_uint32,
@@ -100,12 +97,9 @@ class UDPServer(DatagramProtocol):
             param["incomplete"] = leechers
             param["interval"] = ANNOUNCE_INTERVAL
 
-<<<<<<< Updated upstream
-=======
         if param.get("event") == EVENT_NAMES.STOP:
             hdel(param["info_hash"], f"{param["ip"]}:{param['port']}")
 
->>>>>>> Stashed changes
         res = self.make_udp_packet(param)
         return res
 
@@ -141,13 +135,7 @@ class UDPServer(DatagramProtocol):
 
             # Read 4-byte unsigned int (big-endian)
             event_id = struct.unpack(">I", msg[80:84])[0]
-<<<<<<< Updated upstream
-            params["event"] = EVENTS.get(event_id)
-            if not params["event"]:
-                raise ValueError("Invalid event")
-=======
             params["event"] = convert_event_id_to_event_enum(event_id)
->>>>>>> Stashed changes
 
             ip = from_uint32(msg[84:88]) or addr[0]
 
