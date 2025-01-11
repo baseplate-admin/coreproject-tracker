@@ -12,8 +12,10 @@ from coreproject_tracker.constants import (
     DEFAULT_ANNOUNCE_PEERS,
     MAX_ANNOUNCE_PEERS,
 )
+from coreproject_tracker.enums import EVENT_NAMES
 from coreproject_tracker.functions import (
     bin_to_hex,
+    convert_event_name_to_event_enum,
     convert_ipv4_coded_ipv6_to_ipv4,
     get_n_random_items,
     hex_to_bin,
@@ -56,6 +58,7 @@ class HTTPServer(resource.Resource):
             request.setResponseCode(HTTPStatus.BAD_REQUEST)
             return bencodepy.bencode({"failure reason": e})
 
+<<<<<<< Updated upstream
         hset(
             data["info_hash"],
             f"{data['peer_ip']}:{data['port']}",
@@ -103,6 +106,59 @@ class HTTPServer(resource.Resource):
             "incomplete": leechers,
         }
         return bencodepy.bencode(output)
+=======
+        if data["event"] == EVENT_NAMES.START:
+            hset(
+                data["info_hash"],
+                f"{data['peer_ip']}:{data['port']}",
+                json.dumps(
+                    {
+                        "peer_id": data["peer_id"],
+                        "info_hash": data["info_hash"],
+                        "peer_ip": data["peer_ip"],
+                        "port": data["port"],
+                        "left": data["left"],
+                    }
+                ),
+            )
+
+            peers = []
+            peers6 = []
+            seeders = 0
+            leechers = 0
+
+            redis_data = hget(data["info_hash"])
+
+            peers_list = get_n_random_items(redis_data.values(), data["numwant"])
+
+            for peer in peers_list:
+                peer_data = json.loads(peer)
+
+                if peer_data["left"] == 0:
+                    seeders += 1
+                else:
+                    leechers += 1
+
+                peers.append(
+                    {
+                        "peer id": hex_to_bin(peer_data["peer_id"]),
+                        "ip": peer_data["peer_ip"],
+                        "port": peer_data["port"],
+                    }
+                )
+
+            output = {
+                "peers": peers,
+                "peers6": peers6,
+                "min interval": ANNOUNCE_INTERVAL,
+                "complete": seeders,
+                "incomplete": leechers,
+            }
+            return bencodepy.bencode(output)
+
+        elif data["event"] == EVENT_NAMES.STOP:
+            hdel(data["info_hash"], f"{data['peer_ip']}:{data['port']}")
+>>>>>>> Stashed changes
 
     def parse_data(self, request: Request) -> dict[str, str | int] | bytes:
         params = {}
@@ -149,4 +205,12 @@ class HTTPServer(resource.Resource):
             raise ValueError("`peer_id` must be a str")
         params["peer_id"] = bin_to_hex(peer_id)
 
+<<<<<<< Updated upstream
+=======
+        event = request.args[b"event"][0].decode()
+        if not isinstance(event, str):
+            raise ValueError("`event` is not a string")
+        params["event"] = convert_event_name_to_event_enum(event)
+
+>>>>>>> Stashed changes
         return params
