@@ -62,7 +62,7 @@ class UDPServer(DatagramProtocol):
         if param["action"] == ACTIONS.ANNOUNCE:
             hset(
                 param["info_hash"],
-                f"{param["ip"]}:{param['port']}",
+                f"{param['ip']}:{param['port']}",
                 json.dumps(
                     {
                         "peer_id": param["peer_id"],
@@ -98,7 +98,7 @@ class UDPServer(DatagramProtocol):
             param["interval"] = ANNOUNCE_INTERVAL
 
         if param.get("event") == EVENT_NAMES.STOP:
-            hdel(param["info_hash"], f"{param["ip"]}:{param['port']}")
+            hdel(param["info_hash"], f"{param['ip']}:{param['port']}")
 
         res = self.make_udp_packet(param)
         return res

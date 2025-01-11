@@ -7,6 +7,7 @@ from coreproject_tracker.enums import IP
 def convert_str_to_ip_object(ip: str) -> bool:
     try:
         # Try to create an IP address object (this works for both IPv4 and IPv6)
+        ip = ip.strip("[]")
         return ipaddress.ip_address(ip)
     except ValueError:
         return False
