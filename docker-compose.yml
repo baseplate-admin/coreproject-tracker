@@ -1,9 +1,10 @@
 services:
     redis:
-        image: redis:7.4.2
+        image: redis:7.4.2-alpine
         container_name: coreproject-tracker-redis
         networks:
             - tracker_network
+
         restart: always
         expose:
             - '6379' # Expose to other services in the network but not to localhost
@@ -17,8 +18,6 @@ services:
 
         networks:
             - tracker_network
-        depends_on:
-            - redis
         restart: always
         environment:
             # Example environment variables
@@ -26,11 +25,13 @@ services:
             REDIS_PORT: 6379
             
         ports:
+            - '8001:8001'
             - '8001:8001/udp' # UDP
 
             - '9000:9000' # HTTP
-            - '8080:8080' # Websocket
+            - '12000:8080' # Websocket
 
 networks:
     tracker_network:
+        driver: 'bridge'
         enable_ipv6: true
