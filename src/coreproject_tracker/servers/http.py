@@ -36,7 +36,7 @@ class HTTPServer(resource.Resource):
     def __init__(self):
         super().__init__()
 
-    def render_GET(self, request: Request):
+    def drender_GET(self, request: Request):
         deferred = threads.deferToThread(self.__render_GET, request)
         deferred.addCallback(self.on_task_done, request)
         deferred.addErrback(self.on_task_error, request)
@@ -54,7 +54,7 @@ class HTTPServer(resource.Resource):
         )
         request.finish()
 
-    def __render_GET(self, request: Request) -> bytes:
+    def render_GET(self, request: Request) -> bytes:
         if request.args == {}:
             request.setHeader("Content-Type", "text/html; charset=utf-8")
             return "🐟🐈 ⸜(｡˃ ᵕ ˂ )⸝♡".encode("utf-8")
@@ -158,6 +158,9 @@ class HTTPServer(resource.Resource):
 
         if RUNNING_IN_DOCKER:
             peer_ip = request.getHeader(b"Host").decode()
+            if peer_ip == "localhost":
+                peer_ip = "127.0.0.1"
+
             if not convert_str_to_ip_object(peer_ip):
                 raise ValueError("`peer_ip` is not a valid ip")
 
