@@ -1,6 +1,7 @@
 import time
 import weakref
 from threading import Lock
+from typing import Optional
 
 from autobahn.twisted.websocket import WebSocketServerProtocol
 
@@ -9,7 +10,14 @@ from coreproject_tracker.constants import (
 )
 
 
-class ConnectionManager:
+class WebsocketConnectionManager:
+    _instance: Optional["WebsocketConnectionManager"] = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(WebsocketConnectionManager, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self):
         # Store connections and their last activity time
         self._connections: dict[str, (weakref.ref, float)] = {}

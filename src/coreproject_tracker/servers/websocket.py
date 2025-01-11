@@ -18,11 +18,11 @@ from coreproject_tracker.functions import (
     hget,
     hset,
 )
-from coreproject_tracker.manager import ConnectionManager
+from coreproject_tracker.singletons import WebsocketConnectionManager
 
 
 class WebSocketServer(WebSocketServerProtocol):
-    __connection_manager = ConnectionManager()
+    __connection_manager = WebsocketConnectionManager()
 
     def onMessage(self, payload, isBinary):
         """
