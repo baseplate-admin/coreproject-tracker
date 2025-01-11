@@ -31,3 +31,5 @@ from .redis import (
     hset as hset,
 )
 from .version import compare_versions as compare_versions
+from .events import convert_event_id_to_event_enum as convert_event_id_to_event_enum
+from .events import convert_event_name_to_event_enum as convert_event_name_to_event_enum

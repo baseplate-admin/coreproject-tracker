@@ -10,11 +10,12 @@ from twisted.web.server import Request
 from coreproject_tracker.constants import (
     ANNOUNCE_INTERVAL,
     DEFAULT_ANNOUNCE_PEERS,
-    EVENTS,
     MAX_ANNOUNCE_PEERS,
 )
+from coreproject_tracker.enums import EVENT_NAMES
 from coreproject_tracker.functions import (
     bin_to_hex,
+    convert_event_name_to_event_enum,
     convert_ipv4_coded_ipv6_to_ipv4,
     convert_str_to_ip_object,
     get_n_random_items,
@@ -58,7 +59,7 @@ class HTTPServer(resource.Resource):
             request.setResponseCode(HTTPStatus.BAD_REQUEST)
             return bencodepy.bencode({"failure reason": e})
 
-        if data["event"] == EVENTS["started"]:
+        if data["event"] == EVENT_NAMES.START:
             hset(
                 data["info_hash"],
                 f"{data['peer_ip']}:{data['port']}",
@@ -107,7 +108,7 @@ class HTTPServer(resource.Resource):
             }
             return bencodepy.bencode(output)
 
-        elif data["event"] == EVENTS["stopped"]:
+        elif data["event"] == EVENT_NAMES.STOP:
             hdel(data["info_hash"], f"{data['peer_ip']}:{data['port']}")
 
     def parse_data(self, request: Request) -> dict[str, str | int] | bytes:
@@ -158,9 +159,6 @@ class HTTPServer(resource.Resource):
         event = request.args[b"event"][0].decode()
         if not isinstance(event, str):
             raise ValueError("`event` is not a string")
-        if action := EVENTS.get(event):
-            params["event"] = action
-        else:
-            raise ValueError(f"`event` is {event} which is invalid")
+        params["event"] = convert_event_name_to_event_enum(event)
 
         return params
