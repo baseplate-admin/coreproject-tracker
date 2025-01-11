@@ -13,15 +13,17 @@ services:
         container_name: coreproject-tracker-nginx
         ports:
             - '12000:8000'
+            - '12000:8000/udp'
+
         volumes:
             - ./nginx.conf:/etc/nginx/nginx.conf
         depends_on:
             - tracker
 
         restart: always
-        extra_hosts:
-        - "host.docker.internal:host-gateway"
-
+        networks:
+            - tracker_network        
+            
     tracker:
         build:
             context: .
