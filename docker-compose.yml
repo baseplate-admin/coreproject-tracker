@@ -25,7 +25,6 @@ services:
             REDIS_PORT: 6379
             
         ports:
-            - '8001:8001'
             - '8001:8001/udp' # UDP
 
             - '9000:9000' # HTTP

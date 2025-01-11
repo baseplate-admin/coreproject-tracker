@@ -33,9 +33,9 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application source code
 COPY . .
 
-EXPOSE 12000/tcp
-EXPOSE 9000/tcp
 EXPOSE 8001/udp
+EXPOSE 9000/tcp
+EXPOSE 12000/tcp
 
 # Set the default command
 CMD ["python", "src/run.py"]
