@@ -2,6 +2,8 @@ from typing import Optional
 
 from redis import Redis
 
+from coreproject_tracker.constants import REDIS_HOST, REDIS_PORT
+
 
 class RedisConnectionManager:
     _instance: Optional["RedisConnectionManager"] = None
@@ -18,7 +20,7 @@ class RedisConnectionManager:
         from coreproject_tracker.functions import compare_versions
 
         if cls._redis_client is None:
-            client = Redis(host="redis", port=6379, decode_responses=True)
+            client = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
             redis_version = client.info().get("redis_version")
             if compare_versions("7.4.2", redis_version) == -1:
                 raise RuntimeError("Redis needs to be at least 7.4.2")

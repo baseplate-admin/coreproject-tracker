@@ -7,6 +7,8 @@ services:
         restart: always
 
     nginx:
+        depends_on:
+            - tracker
         image: nginx:latest
         container_name: nginx
         ports:
@@ -30,7 +32,10 @@ services:
         depends_on:
             - redis
         restart: always
-
+        environment:
+            # Example environment variables
+            REDIS_HOST: redis
+            REDIS_PORT: 6379
 networks:
     app_network:
         driver: bridge
