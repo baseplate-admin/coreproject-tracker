@@ -1,3 +1,4 @@
+from .docker import RUNNING_IN_DOCKER as RUNNING_IN_DOCKER
 from .interval import (
     ANNOUNCE_INTERVAL as ANNOUNCE_INTERVAL,
 )

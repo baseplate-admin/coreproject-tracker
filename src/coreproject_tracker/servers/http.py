@@ -11,6 +11,7 @@ from coreproject_tracker.constants import (
     ANNOUNCE_INTERVAL,
     DEFAULT_ANNOUNCE_PEERS,
     MAX_ANNOUNCE_PEERS,
+    RUNNING_IN_DOCKER,
 )
 from coreproject_tracker.enums import EVENT_NAMES, IP
 from coreproject_tracker.functions import (
@@ -35,7 +36,7 @@ class HTTPServer(resource.Resource):
     def __init__(self):
         super().__init__()
 
-    def render_GET(self, request: Request):
+    def __render_GET(self, request: Request):
         deferred = threads.deferToThread(self.__render_GET, request)
         deferred.addCallback(self.on_task_done, request)
         deferred.addErrback(self.on_task_error, request)
@@ -53,7 +54,9 @@ class HTTPServer(resource.Resource):
         )
         request.finish()
 
-    def __render_GET(self, request: Request) -> bytes:
+    def render_GET(self, request: Request) -> bytes:
+        print(request.requestHeaders)
+
         if request.args == {}:
             request.setHeader("Content-Type", "text/html; charset=utf-8")
             return "🐟🐈 ⸜(｡˃ ᵕ ˂ )⸝♡".encode("utf-8")
@@ -154,14 +157,17 @@ class HTTPServer(resource.Resource):
         numwant = int(numwant)
         params["numwant"] = min(numwant or DEFAULT_ANNOUNCE_PEERS, MAX_ANNOUNCE_PEERS)
 
-        peer_ip = request.getClientAddress().host
-        if not convert_str_to_ip_object(peer_ip):
-            raise ValueError("`peer_ip` is not a valid ip")
-
-        if ipv4_address := convert_ipv4_coded_ipv6_to_ipv4(peer_ip):
-            params["peer_ip"] = ipv4_address
+        if RUNNING_IN_DOCKER:
+            print(request.args)
         else:
-            params["peer_ip"] = peer_ip
+            peer_ip = request.getClientAddress().host
+            if not convert_str_to_ip_object(peer_ip):
+                raise ValueError("`peer_ip` is not a valid ip")
+
+            if ipv4_address := convert_ipv4_coded_ipv6_to_ipv4(peer_ip):
+                params["peer_ip"] = ipv4_address
+            else:
+                params["peer_ip"] = peer_ip
 
         peer_id = request.args[b"peer_id"][0].decode()
         if not isinstance(peer_id, str):
