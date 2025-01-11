@@ -1,7 +1,7 @@
-FROM python:3.13-slim AS builder
+FROM python:3.13-alpine AS builder
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN apk update && apk add --no-cache curl
 
 # Install Poetry
 ENV POETRY_VERSION=1.8.5
@@ -21,7 +21,7 @@ RUN poetry config virtualenvs.create false
 RUN poetry install --only=main --no-root
 
 # Stage 2: Final stage
-FROM python:3.13-slim
+FROM python:3.13-alpine
 
 # Set working directory
 WORKDIR /app
@@ -32,6 +32,10 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application source code
 COPY . .
+
+EXPOSE 8001/udp
+EXPOSE 9000/tcp
+EXPOSE 12000/tcp
 
 # Set the default command
 CMD ["python", "src/run.py"]
