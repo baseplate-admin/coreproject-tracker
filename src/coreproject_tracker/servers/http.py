@@ -47,7 +47,10 @@ class HTTPServer(resource.Resource):
 
     def on_task_error(self, failure, request):
         print(failure)
-        request.write(failure.getErrorMessage().encode())
+        request.setResponseCode(HTTPStatus.BAD_REQUEST)
+        request.write(
+            bencodepy.bencode({"failure reason": failure.getErrorMessage()}).encode()
+        )
         request.finish()
 
     def __render_GET(self, request: Request) -> bytes:
@@ -55,74 +58,70 @@ class HTTPServer(resource.Resource):
             request.setHeader("Content-Type", "text/html; charset=utf-8")
             return "🐟🐈 ⸜(｡˃ ᵕ ˂ )⸝♡".encode("utf-8")
 
-        try:
-            data = self.parse_data(request)
-        except ValueError as e:
-            request.setResponseCode(HTTPStatus.BAD_REQUEST)
-            return bencodepy.bencode({"failure reason": e})
+        data = self.parse_data(request)
 
-        if data["event"] == EVENT_NAMES.START:
-            hset(
-                data["info_hash"],
-                f"{data['peer_ip']}:{data['port']}",
-                json.dumps(
-                    {
-                        "peer_id": data["peer_id"],
-                        "info_hash": data["info_hash"],
-                        "peer_ip": data["peer_ip"],
-                        "port": data["port"],
-                        "left": data["left"],
-                    }
-                ),
-            )
-
-            peers = []
-            peers6 = []
-            seeders = 0
-            leechers = 0
-
-            redis_data = hget(data["info_hash"])
-
-            peers_list = get_n_random_items(redis_data.values(), data["numwant"])
-
-            for peer in peers_list:
-                peer_data = json.loads(peer)
-
-                if peer_data["left"] == 0:
-                    seeders += 1
-                else:
-                    leechers += 1
-
-                peer_ip = peer_data["peer_ip"]
-                peer_ip_type = check_ip_type(peer_ip)
-                if peer_ip_type == IP.IPV4:
-                    peers.append(
-                        {
-                            "peer id": hex_to_bin(peer_data["peer_id"]),
-                            "ip": peer_data["peer_ip"],
-                            "port": peer_data["port"],
-                        }
-                    )
-                elif peer_ip_type == IP.IPV6:
-                    peers6.append(
-                        {
-                            "peer id": hex_to_bin(peer_data["peer_id"]),
-                            "ip": peer_data["peer_ip"],
-                            "port": peer_data["port"],
-                        }
-                    )
-
-            output = {
-                "peers": peers,
-                "peers6": peers6,
-                "min interval": ANNOUNCE_INTERVAL,
-                "complete": seeders,
-                "incomplete": leechers,
-            }
-            return bencodepy.bencode(output)
-
-        elif data["event"] == EVENT_NAMES.STOP:
+        if data["event"] == EVENT_NAMES.STOP:
             hdel(data["info_hash"], f"{data['peer_ip']}:{data['port']}")
+            return b""
+
+        hset(
+            data["info_hash"],
+            f"{data['peer_ip']}:{data['port']}",
+            json.dumps(
+                {
+                    "peer_id": data["peer_id"],
+                    "info_hash": data["info_hash"],
+                    "peer_ip": data["peer_ip"],
+                    "port": data["port"],
+                    "left": data["left"],
+                }
+            ),
+        )
+
+        peers = []
+        peers6 = []
+        seeders = 0
+        leechers = 0
+
+        redis_data = hget(data["info_hash"])
+
+        peers_list = get_n_random_items(redis_data.values(), data["numwant"])
+
+        for peer in peers_list:
+            peer_data = json.loads(peer)
+
+            if peer_data["left"] == 0:
+                seeders += 1
+            else:
+                leechers += 1
+
+            peer_ip = peer_data["peer_ip"]
+            peer_ip_type = check_ip_type(peer_ip)
+            if peer_ip_type == IP.IPV4:
+                peers.append(
+                    {
+                        "peer id": hex_to_bin(peer_data["peer_id"]),
+                        "ip": peer_data["peer_ip"],
+                        "port": peer_data["port"],
+                    }
+                )
+            elif peer_ip_type == IP.IPV6:
+                peers6.append(
+                    {
+                        "peer id": hex_to_bin(peer_data["peer_id"]),
+                        "ip": peer_data["peer_ip"],
+                        "port": peer_data["port"],
+                    }
+                )
+
+        output = {
+            "peers": peers,
+            "peers6": peers6,
+            "min interval": ANNOUNCE_INTERVAL,
+            "complete": seeders,
+            "incomplete": leechers,
+        }
+        return bencodepy.bencode(output)
 
     def parse_data(self, request: Request) -> dict[str, str | int] | bytes:
         params = {}
@@ -169,9 +168,13 @@ class HTTPServer(resource.Resource):
             raise ValueError("`peer_id` must be a str")
         params["peer_id"] = bin_to_hex(peer_id)
 
-        event = request.args[b"event"][0].decode()
-        if not isinstance(event, str):
-            raise ValueError("`event` is not a string")
-        params["event"] = convert_event_name_to_event_enum(event)
+        try:
+            event = request.args[b"event"][0].decode()
+            if not isinstance(event, str):
+                raise ValueError("`event` is not a string")
+            params["event"] = convert_event_name_to_event_enum(event)
 
+        # Webtorrent doesn't provide event
+        except KeyError:
+            params["event"] = None
         return params
