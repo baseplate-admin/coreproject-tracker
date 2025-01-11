@@ -108,7 +108,6 @@ class HTTPServer(resource.Resource):
             return bencodepy.bencode(output)
 
         elif data["event"] == EVENTS["stopped"]:
-            # Delete the peer
             hdel(data["info_hash"], f"{data['peer_ip']}:{data['port']}")
 
     def parse_data(self, request: Request) -> dict[str, str | int] | bytes:
