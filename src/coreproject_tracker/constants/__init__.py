@@ -1,4 +1,5 @@
 from .events import EVENTS as EVENTS
+from .events import EVENTS_IDS as EVENTS_IDS
 from .interval import (
     ANNOUNCE_INTERVAL as ANNOUNCE_INTERVAL,
 )

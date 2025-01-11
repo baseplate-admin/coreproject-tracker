@@ -9,7 +9,7 @@ from coreproject_tracker.constants import (
     ANNOUNCE_INTERVAL,
     CONNECTION_ID,
     DEFAULT_ANNOUNCE_PEERS,
-    EVENTS,
+    EVENTS_IDS,
     MAX_ANNOUNCE_PEERS,
 )
 from coreproject_tracker.enums import ACTIONS
@@ -131,7 +131,7 @@ class UDPServer(DatagramProtocol):
 
             # Read 4-byte unsigned int (big-endian)
             event_id = struct.unpack(">I", msg[80:84])[0]
-            params["event"] = EVENTS.get(event_id)
+            params["event"] = EVENTS_IDS.get(event_id)
             if not params["event"]:
                 raise ValueError("Invalid event")
 
