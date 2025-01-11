@@ -33,7 +33,6 @@ class UDPServer(DatagramProtocol):
         deferred = threads.deferToThread(self.__datagramReceived, data, addr)
         deferred.addCallback(self.on_task_done, addr)
         deferred.addErrback(self.on_task_error, addr)
-
         # res = self._datagramReceived(data, addr)
         # self.on_task_done(res, addr)
 
@@ -57,7 +56,6 @@ class UDPServer(DatagramProtocol):
             )
 
         param = self.parse_udp_packet(data, addr)
-        print(param)
         if param["action"] == ACTIONS.ANNOUNCE:
             hset(
                 param["info_hash"],
