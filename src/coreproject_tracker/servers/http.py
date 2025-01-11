@@ -12,9 +12,10 @@ from coreproject_tracker.constants import (
     DEFAULT_ANNOUNCE_PEERS,
     MAX_ANNOUNCE_PEERS,
 )
-from coreproject_tracker.enums import EVENT_NAMES
+from coreproject_tracker.enums import EVENT_NAMES, IP
 from coreproject_tracker.functions import (
     bin_to_hex,
+    check_ip_type,
     convert_event_name_to_event_enum,
     convert_ipv4_coded_ipv6_to_ipv4,
     convert_str_to_ip_object,
@@ -45,6 +46,7 @@ class HTTPServer(resource.Resource):
         request.finish()
 
     def on_task_error(self, failure, request):
+        print(failure)
         request.write(failure.getErrorMessage().encode())
         request.finish()
 
@@ -91,13 +93,24 @@ class HTTPServer(resource.Resource):
                 else:
                     leechers += 1
 
-                peers.append(
-                    {
-                        "peer id": hex_to_bin(peer_data["peer_id"]),
-                        "ip": peer_data["peer_ip"],
-                        "port": peer_data["port"],
-                    }
-                )
+                peer_ip = peer_data["peer_ip"]
+                peer_ip_type = check_ip_type(peer_ip)
+                if peer_ip_type == IP.IPV4:
+                    peers.append(
+                        {
+                            "peer id": hex_to_bin(peer_data["peer_id"]),
+                            "ip": peer_data["peer_ip"],
+                            "port": peer_data["port"],
+                        }
+                    )
+                elif peer_ip_type == IP.IPV6:
+                    peers6.append(
+                        {
+                            "peer id": hex_to_bin(peer_data["peer_id"]),
+                            "ip": peer_data["peer_ip"],
+                            "port": peer_data["port"],
+                        }
+                    )
 
             output = {
                 "peers": peers,

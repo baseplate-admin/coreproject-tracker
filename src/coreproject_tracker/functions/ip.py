@@ -1,6 +1,8 @@
 import ipaddress
 import struct
 
+from coreproject_tracker.enums import IP
+
 
 def convert_str_to_ip_object(ip: str) -> bool:
     try:
@@ -44,4 +46,14 @@ def convert_ipv4_coded_ipv6_to_ipv4(ip):
 
     # Check if it's an IPv6 address and IPv4-mapped
     if isinstance(ip_obj, ipaddress.IPv6Address) and ip_obj.ipv4_mapped:
-        return True
+        return str(ip_obj.ipv4_mapped)
+
+
+def check_ip_type(ip):
+    if not (ip_obj := convert_str_to_ip_object(ip)):
+        return False
+
+    if isinstance(ip_obj, ipaddress.IPv4Address):
+        return IP.IPV4
+    elif isinstance(ip_obj, ipaddress.IPv6Address):
+        return IP.IPV6

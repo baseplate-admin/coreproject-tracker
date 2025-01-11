@@ -13,12 +13,15 @@ from .bytes import (
 )
 from .convertion import bin_to_hex as bin_to_hex
 from .convertion import hex_to_bin as hex_to_bin
+from .events import convert_event_id_to_event_enum as convert_event_id_to_event_enum
+from .events import convert_event_name_to_event_enum as convert_event_name_to_event_enum
 from .ip import (
     addr_to_ip_port as addr_to_ip_port,
 )
 from .ip import (
     addrs_to_compact as addrs_to_compact,
 )
+from .ip import check_ip_type as check_ip_type
 from .ip import convert_ipv4_coded_ipv6_to_ipv4 as convert_ipv4_coded_ipv6_to_ipv4
 from .ip import (
     convert_str_to_ip_object as convert_str_to_ip_object,
@@ -31,5 +34,3 @@ from .redis import (
     hset as hset,
 )
 from .version import compare_versions as compare_versions
-from .events import convert_event_id_to_event_enum as convert_event_id_to_event_enum
-from .events import convert_event_name_to_event_enum as convert_event_name_to_event_enum
