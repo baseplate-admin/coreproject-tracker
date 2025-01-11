@@ -8,21 +8,21 @@ services:
         expose:
             - '6379' # Expose to other services in the network but not to localhost
 
-    traefik:
-        image: traefik:latest
-        command:
-            - "--api.insecure=true"  # Enable dashboard
-            - "--providers.docker=true"
-            - "--providers.docker.exposedbydefault=false"
-            - "--entrypoints.web.address=:8000"
-            - "--entrypoints.websecure.address=:8443"
-            - "--entrypoints.udp.address=:8000/udp"  # UDP entrypoint
+    nginx:
+        image: nginx:latest
+        container_name: coreproject-tracker-nginx
         ports:
-            - "12000:8000"
-            - "12000:8000/udp"  # UDP port
-            - "8443:8443"
+            - '12000:8000'
+            - '12000:8000/udp'
+
         volumes:
-            - "/var/run/docker.sock:/var/run/docker.sock:ro"
+            - ./nginx.conf:/etc/nginx/nginx.conf
+        depends_on:
+            - tracker
+
+        restart: always
+        networks:
+            - tracker_network        
             
     tracker:
         build:
@@ -45,25 +45,5 @@ services:
             - '8001:8000'
             - '9001:9000'
             - '8080:8080'
-
-        labels:
-            - "traefik.enable=true"
-            
-            # HTTP Configuration
-            - "traefik.http.routers.tracker-http.entrypoints=web"
-            - "traefik.http.routers.tracker-http.rule=PathPrefix(`/`)"
-            - "traefik.http.services.tracker-http.loadbalancer.server.port=9000"
-            
-            # WebSocket Configuration
-            - "traefik.http.routers.tracker-ws.entrypoints=web"
-            - "traefik.http.routers.tracker-ws.rule=PathPrefix(`/`)"
-            - "traefik.http.services.tracker-ws.loadbalancer.server.port=8080"
-            - "traefik.http.middlewares.tracker-ws.headers.customrequestheaders.Connection=upgrade"
-            - "traefik.http.middlewares.tracker-ws.headers.customrequestheaders.Upgrade=websocket"
-            - "traefik.http.routers.tracker-ws.middlewares=tracker-ws"
-            
-            # UDP Configuration
-            - "traefik.udp.routers.tracker-udp.entrypoints=udp"
-            - "traefik.udp.services.tracker-udp.loadbalancer.server.port=8000"
 networks:
     tracker_network:
