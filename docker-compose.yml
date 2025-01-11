@@ -4,18 +4,15 @@ services:
         container_name: coreproject-tracker-redis
         networks:
             - tracker_network
-
         restart: always
         expose:
             - '6379' # Expose to other services in the network but not to localhost
-
 
     tracker:
         build:
             context: .
             dockerfile: Dockerfile
         container_name: coreproject-tracker
-
         networks:
             - tracker_network
         restart: always
@@ -23,10 +20,8 @@ services:
             # Example environment variables
             REDIS_HOST: redis
             REDIS_PORT: 6379
-            
         ports:
-            - '8001:8001/udp' # UDP
-
+            - '8001:8001/udp' # UDP port 8001
             - '9000:9000' # HTTP
             - '12000:8080' # Websocket
 
