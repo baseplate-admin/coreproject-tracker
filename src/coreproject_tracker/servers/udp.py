@@ -58,7 +58,6 @@ class UDPServer(DatagramProtocol):
             )
 
         param = self.parse_udp_packet(data, addr)
-        print(param)
 
         if param["action"] == ACTIONS.ANNOUNCE:
             hset(
@@ -102,6 +101,7 @@ class UDPServer(DatagramProtocol):
             hdel(param["info_hash"], f"{param['ip']}:{param['port']}")
 
         res = self.make_udp_packet(param)
+        print(res.hex())
         return res
 
     def parse_udp_packet(self, msg, addr):

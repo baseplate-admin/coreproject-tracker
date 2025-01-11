@@ -8,22 +8,6 @@ services:
         expose:
             - '6379' # Expose to other services in the network but not to localhost
 
-    nginx:
-        image: nginx:latest
-        container_name: coreproject-tracker-nginx
-        ports:
-            - '12000:8000'
-            - '12000:8000/udp'
-
-        volumes:
-            - ./nginx.conf:/etc/nginx/nginx.conf
-        depends_on:
-            - tracker
-
-        restart: always
-        networks:
-            - tracker_network        
-            
     tracker:
         build:
             context: .
@@ -39,11 +23,9 @@ services:
             # Example environment variables
             REDIS_HOST: redis
             REDIS_PORT: 6379
-            # This tells the tracker to lookup the real ip
-            RUNNING_IN_DOCKER : True
         ports:
-            - '8001:8000'
-            - '9001:9000'
-            - '8080:8080'
+            - '12000:8000/udp' #UDP
+            - '12001:9000' # HTTP
+            - '12002:8080' # Websocket
 networks:
     tracker_network:
