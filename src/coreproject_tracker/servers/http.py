@@ -10,16 +10,18 @@ from twisted.web.server import Request
 from coreproject_tracker.constants import (
     ANNOUNCE_INTERVAL,
     DEFAULT_ANNOUNCE_PEERS,
+    EVENTS,
     MAX_ANNOUNCE_PEERS,
 )
 from coreproject_tracker.functions import (
     bin_to_hex,
     convert_ipv4_coded_ipv6_to_ipv4,
+    convert_str_to_ip_object,
     get_n_random_items,
+    hdel,
     hex_to_bin,
     hget,
     hset,
-    convert_str_to_ip_object,
 )
 
 log = Logger(namespace="coreproject_tracker")
@@ -56,53 +58,57 @@ class HTTPServer(resource.Resource):
             request.setResponseCode(HTTPStatus.BAD_REQUEST)
             return bencodepy.bencode({"failure reason": e})
 
-        hset(
-            data["info_hash"],
-            f"{data['peer_ip']}:{data['port']}",
-            json.dumps(
-                {
-                    "peer_id": data["peer_id"],
-                    "info_hash": data["info_hash"],
-                    "peer_ip": data["peer_ip"],
-                    "port": data["port"],
-                    "left": data["left"],
-                }
-            ),
-        )
-
-        peers = []
-        peers6 = []
-        seeders = 0
-        leechers = 0
-
-        redis_data = hget(data["info_hash"])
-
-        peers_list = get_n_random_items(redis_data.values(), data["numwant"])
-
-        for peer in peers_list:
-            peer_data = json.loads(peer)
-
-            if peer_data["left"] == 0:
-                seeders += 1
-            else:
-                leechers += 1
-
-            peers.append(
-                {
-                    "peer id": hex_to_bin(peer_data["peer_id"]),
-                    "ip": peer_data["peer_ip"],
-                    "port": peer_data["port"],
-                }
+        if data["event"] == EVENTS["started"]:
+            hset(
+                data["info_hash"],
+                f"{data['peer_ip']}:{data['port']}",
+                json.dumps(
+                    {
+                        "peer_id": data["peer_id"],
+                        "info_hash": data["info_hash"],
+                        "peer_ip": data["peer_ip"],
+                        "port": data["port"],
+                        "left": data["left"],
+                    }
+                ),
             )
 
-        output = {
-            "peers": peers,
-            "peers6": peers6,
-            "min interval": ANNOUNCE_INTERVAL,
-            "complete": seeders,
-            "incomplete": leechers,
-        }
-        return bencodepy.bencode(output)
+            peers = []
+            peers6 = []
+            seeders = 0
+            leechers = 0
+
+            redis_data = hget(data["info_hash"])
+
+            peers_list = get_n_random_items(redis_data.values(), data["numwant"])
+
+            for peer in peers_list:
+                peer_data = json.loads(peer)
+
+                if peer_data["left"] == 0:
+                    seeders += 1
+                else:
+                    leechers += 1
+
+                peers.append(
+                    {
+                        "peer id": hex_to_bin(peer_data["peer_id"]),
+                        "ip": peer_data["peer_ip"],
+                        "port": peer_data["port"],
+                    }
+                )
+
+            output = {
+                "peers": peers,
+                "peers6": peers6,
+                "min interval": ANNOUNCE_INTERVAL,
+                "complete": seeders,
+                "incomplete": leechers,
+            }
+            return bencodepy.bencode(output)
+
+        elif data["event"] == EVENTS["stopped"]:
+            hdel(data["info_hash"], f"{data['peer_ip']}:{data['port']}")
 
     def parse_data(self, request: Request) -> dict[str, str | int] | bytes:
         params = {}
@@ -148,5 +154,13 @@ class HTTPServer(resource.Resource):
         if not isinstance(peer_id, str):
             raise ValueError("`peer_id` must be a str")
         params["peer_id"] = bin_to_hex(peer_id)
+
+        event = request.args[b"event"][0].decode()
+        if not isinstance(event, str):
+            raise ValueError("`event` is not a string")
+        if action := EVENTS.get(event):
+            params["event"] = action
+        else:
+            raise ValueError(f"`event` is {event} which is invalid")
 
         return params
