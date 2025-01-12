@@ -6,3 +6,5 @@ _.pyo
 .env
 node_modules
 .venv
+.gitignore
+.gitattributes

@@ -19,6 +19,7 @@ COPY pyproject.toml poetry.lock ./
 # Install dependencies (no virtual environment)
 RUN poetry config virtualenvs.create false
 RUN poetry install --only=main --no-root
+RUN rm poetry.lock
 
 # Stage 2: Final stage
 FROM python:3.13-alpine

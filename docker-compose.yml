@@ -4,8 +4,7 @@ services:
         container_name: coreproject-tracker-redis
         network_mode: 'host'
         restart: always
-        expose:
-            - '6379' # Expose to other services in the network but not to localhost
+        command: redis-server --port 16379 
 
     tracker:
         build:
@@ -17,5 +16,5 @@ services:
         environment:
             # Example environment variables
             REDIS_HOST: localhost
-            REDIS_PORT: 6379
+            REDIS_PORT: 16379
 
