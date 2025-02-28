@@ -33,4 +33,3 @@ from .redis import (
 from .redis import (
     hset as hset,
 )
-from .version import compare_versions as compare_versions

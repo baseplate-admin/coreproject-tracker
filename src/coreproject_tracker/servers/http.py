@@ -32,9 +32,6 @@ log = Logger(namespace="coreproject_tracker")
 class HTTPServer(resource.Resource):
     isLeaf = True
 
-    def __init__(self):
-        super().__init__()
-
     def render_GET(self, request: Request):
         deferred = threads.deferToThread(self.__render_GET, request)
         deferred.addCallback(self.on_task_done, request)
@@ -48,9 +45,7 @@ class HTTPServer(resource.Resource):
     def on_task_error(self, failure, request):
         print(failure)
         request.setResponseCode(HTTPStatus.BAD_REQUEST)
-        request.write(
-            bencodepy.bencode({"failure reason": failure.getErrorMessage()}).encode()
-        )
+        request.write(bencodepy.bencode({"failure reason": failure.getErrorMessage()}))
         request.finish()
 
     def __render_GET(self, request: Request) -> bytes:
@@ -123,7 +118,7 @@ class HTTPServer(resource.Resource):
         }
         return bencodepy.bencode(output)
 
-    def parse_data(self, request: Request) -> dict[str, str | int] | bytes:
+    def parse_data(self, request: Request) -> dict[str, str | int] | str:
         params = {}
 
         info_hash_raw = request.args[b"info_hash"][0]
